@@ -353,7 +353,6 @@ dodge <- position_dodge(width=0.9) #ggplot prep for graphing
 
 
 #2. Importing----
-setwd("/cloud/project/UnMarkedData")
 
 load("DICK_Herb.Rdata") #abundance n=7
 load("BOBO_Herb.Rdata") #abundance n=7
