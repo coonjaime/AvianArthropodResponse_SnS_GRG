@@ -31,16 +31,13 @@ library (MASS)
 #1. Load Data----
 #....................................................................................#
 
-#where the data is stored
-Jaime_PC_data_path = "C:/Users/jjcoon2/Dropbox/_Manuscripts/Dissertation/Ch. 1/PatchArth_R/PatchArthData_Landscape_9.10.2019.csv"
-Jaime_Mac_data_path = "/Users/rozzer/Dropbox/_Manuscripts/Dissertation/Ch. 1/PatchArth_R/PatchArthData_Landscape_9.10.2019.csv"
-
-#where graphs get saved
-
-Jaime_Mac_save_path= "/Users/rozzer/Dropbox/_Manuscripts/Dissertation/Ch. 1/PatchArth_R/"
 
 #Importing the data.
-ArthPatch_All=read.csv(Jaime_Mac_data_path,header=T)
+ArthPatch_All=read.csv("/cloud/project/Arth_Abund/PatchArthData_Landscape_9.10.2019.csv")
+
+
+
+
 #View(ArthPatch_All)
 
 #....................................................................................#####
