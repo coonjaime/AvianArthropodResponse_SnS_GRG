@@ -210,7 +210,7 @@ Detection_mods_occu  = function(df) {
   # Timing: StartTime, DOY
   # Observer: Obs
   # Visibility: Robel
-  Null                      =occu(~Robel ~1, data=df)
+  Null                      =occu(~Robel                               ~1, data=df)
   Obs                       =occu(~Obs+Robel                           ~1, data=df)
   StartTime                 =occu(~StartTime+Robel                     ~1, data=df)
   DOY                       =occu(~DOY+Robel                           ~1, data=df)
@@ -238,7 +238,7 @@ ConfidenceIntervals  = function(model,coefs) {
   coefs$UCL=CIs$UCL
   coefs
 } #extracting and organizing confidence intervals from final models
-PredictedValues.     = function(model,newdata) {
+PredictedValues      = function(model,newdata) {
   abundance_estimates = as.data.frame(predict(model, type = "state", newdata = newdata, level=0.85,appendData = T))
   abundance_estimates
 } #calculating predicted values for grazing
@@ -363,8 +363,16 @@ unmarked_data_Gr     = function(df) {
   unmarkedFramePCount(abundance_by_visit,siteCovs,obsCovs)
 }#setting up unmarked 'pcount' for n=18
 dodge =  position_dodge(width=0.9) #ggplot prep for graphing
-
-
+theme_bar_SnS_leg <- function () { 
+  theme(text=element_text(size=10),
+        axis.title=element_text(face="bold", size=10),
+        axis.text=element_text(size=10,color="black"),
+        axis.line=element_line(color="black",size=1),
+        legend.text=element_text(size=10, color="black"),
+        legend.title=element_blank(),
+        panel.grid=element_blank(),
+        plot.title=element_text(size=11, face="bold",hjust=0))
+      }
 #2. Importing----
 
 load("DICK_Herb.Rdata") #abundance n=7
@@ -478,18 +486,18 @@ DICK_Landscape_mods(DICK_PCount)
           #Null              13 1336.976   15.2426 0.0002 1.0000 -655.4882
 
 
-DICK_landscape_mod   =pcount(~Obs+DOY+StartTime ~Tree_Prop, data=DICK_PCount, mixture="ZIP",K=100)
-confint(DICK_landscape_mod, type="state", level=0.85) #indicates Robel is uninformative parameter
+DICK_landscape_mod   =pcount(~Obs+DOY+StartTime ~Tree_Prop+offset(log(Area_ha)), data=DICK_PCount, mixture="ZIP",K=100)
+confint(DICK_landscape_mod, type="state", level=0.85) #indicates Tree is uninformative parameter
 
 DICK_Abundance_mods = function(df) {
-  Null                       =pcount(~Obs+StartTime+DOY   ~offset(log(Area_ha)), data=df, mixture="ZIP", K=100)
-  TSH                        =pcount(~Obs+StartTime+DOY   ~TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  TSH_GrazingTreat           =pcount(~Obs+StartTime+DOY   ~TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat                  =pcount(~Obs+StartTime+DOY   ~HerbTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat_GrazingTreat     =pcount(~Obs+StartTime+DOY   ~HerbTreat+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat_TSH              =pcount(~Obs+StartTime+DOY   ~HerbTreat*TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat_TSH_GrazingTreat =pcount(~Obs+StartTime+DOY   ~HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  GrazingTreat               =pcount(~Obs+StartTime+DOY   ~GrazingTreat+offset(log(Area_ha)), mixture="ZIP",data=df, K=100)
+  Null                       =pcount(~Obs+StartTime+DOY   ~Tree_Prop + offset(log(Area_ha)), data=df, mixture="ZIP", K=100)
+  TSH                        =pcount(~Obs+StartTime+DOY   ~Tree_Prop + TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  TSH_GrazingTreat           =pcount(~Obs+StartTime+DOY   ~Tree_Prop + TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat                  =pcount(~Obs+StartTime+DOY   ~Tree_Prop + HerbTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat_GrazingTreat     =pcount(~Obs+StartTime+DOY   ~Tree_Prop + HerbTreat+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat_TSH              =pcount(~Obs+StartTime+DOY   ~Tree_Prop + HerbTreat*TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat_TSH_GrazingTreat =pcount(~Obs+StartTime+DOY   ~Tree_Prop + HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  GrazingTreat               =pcount(~Obs+StartTime+DOY   ~Tree_Prop + GrazingTreat+offset(log(Area_ha)), mixture="ZIP",data=df, K=100)
   
   mods=list(Null,TSH,TSH_GrazingTreat,HerbTreat, HerbTreat_GrazingTreat,HerbTreat_TSH,HerbTreat_TSH_GrazingTreat,GrazingTreat)
   names=c("Null","TSH","TSH+GrazingTreat","HerbTreat", "HerbTreat+GrazingTreat","HerbTreat*TSH","HerbTreat*TSH+GrazingTreat","GrazingTreat")
@@ -498,22 +506,23 @@ DICK_Abundance_mods = function(df) {
   
 }
 DICK_Abundance_mods(DICK_PCount) #>>Stage 3: HerbTreat*TSH+GrazingTreat----
-      #                             K      AIC Delta_AIC  AICWt Cum.Wt        LL
-      # HerbTreat*TSH+GrazingTreat 26 1269.460    0.0000 0.9997 0.9997 -608.7300
-      # HerbTreat+GrazingTreat     17 1285.968   16.5083 0.0003 1.0000 -625.9841
-      # HerbTreat*TSH              24 1299.533   30.0733 0.0000 1.0000 -625.7666
-      # TSH+GrazingTreat           18 1308.833   39.3732 0.0000 1.0000 -636.4166
-      # HerbTreat                  15 1309.005   39.5446 0.0000 1.0000 -639.5023
-      # GrazingTreat               15 1314.918   45.4576 0.0000 1.0000 -642.4588
-      # TSH                        16 1335.103   65.6431 0.0000 1.0000 -651.5516
-      # Null                       13 1336.976   67.5164 0.0000 1.0000 -655.4882
+          #                            K      AIC Delta_AIC  AICWt Cum.Wt        LL
+          #HerbTreat*TSH+GrazingTreat 27 1271.457    0.0000 0.9960 0.9960 -608.7286
+          #HerbTreat*TSH              25 1282.670   11.2130 0.0037 0.9997 -616.3351
+          #HerbTreat+GrazingTreat     18 1287.803   16.3453 0.0003 1.0000 -625.9013
+          #HerbTreat                  16 1292.367   20.9098 0.0000 1.0000 -630.1835
+          #TSH+GrazingTreat           19 1310.591   39.1337 0.0000 1.0000 -636.2955
+          #GrazingTreat               16 1316.915   45.4581 0.0000 1.0000 -642.4577
+          #TSH                        17 1317.007   45.5501 0.0000 1.0000 -641.5037
+          #Null                       14 1321.734   50.2764 0.0000 1.0000 -646.8668
 
-DICK_abundance_mod   =pcount(~Obs+StartTime+DOY ~HerbYesNo*TSH+GrazingTreat, data=DICK_PCount, mixture="ZIP",K=100)
-confint (DICK_abundance_mod, type="det", level=0.85) #indicates Robel is uninformative parameter
-confint (DICK_abundance_mod, type="state", level=0.85) #indicates Robel is uninformative parameter
+
+DICK_abundance_mod   =pcount(~Obs+StartTime+DOY ~Tree_Prop + HerbYesNo*TSH+GrazingTreat+offset(log(Area_ha)), data=DICK_PCount, mixture="ZIP",K=100)
+confint (DICK_abundance_mod, type="det", level=0.85) #
+confint (DICK_abundance_mod, type="state", level=0.85) #
 
 #>>Top model, Coefs, CIs----
-DICK_Top=pcount(~Obs+StartTime+DOY   ~HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=DICK_PCount, mixture="ZIP",K=100)
+DICK_Top=pcount(~Obs+StartTime+DOY   ~Tree_Prop + HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=DICK_PCount, mixture="ZIP",K=100)
 DICK_Abund_coef_df=Coefficients(DICK_Top) 
 
 #>>Dickcissel Graph----
@@ -521,7 +530,8 @@ DICK_newdata = data.frame(TSH=c("a","a","a","a","a","a","a","a","a","b","b","b",
                           GrazingTreat = c("None","None","None","SLS","SLS","SLS","IES","IES","IES"),
                           HerbTreat = c("Con", "SnS", "Spr"),
                           Area_ha = 1,
-                          Crop_Prop=0.2)
+                          Crop_Prop = 0.2,
+                          Tree_Prop = 0.19)
 
 DICK_Predicted=PredictedValues(DICK_Top,DICK_newdata)
 DICK_Predicted_Sum= DICK_Predicted %>% 
@@ -540,16 +550,8 @@ DICK.plot <- ggplot(data = DICK_Predicted_Sum)+ #set the data source for the plo
   scale_y_continuous(limits = c(0,17), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("Control","Spray","Spray-and-Seed"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        legend.title=element_text(size=12,color="black",face="bold"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  theme_bar_SnS_leg()+
+  theme(axis.title.x = element_blank())+
   scale_x_discrete(breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
   geom_errorbar(aes(x = TSH, 
                     ymin = lower, 
@@ -560,7 +562,7 @@ DICK.plot <- ggplot(data = DICK_Predicted_Sum)+ #set the data source for the plo
   labs(y = "Birds per Ha", 
        x = "Time Since Herbicide (y)", 
        fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Dickcissels")  #can use this to set a main title above the plot
+  ggtitle("A. Dickcissels")  #can use this to set a main title above the plot
 DICK.plot
 
 #__________________________####
@@ -653,9 +655,10 @@ BOBO_Abundance_mods(BOBO_PCount) #>>Stage 3: HerbTreat*TSH+GrazingTreat----
           #HerbTreat                  18 1115.255   17.6661 0.0001 1.0000 -539.6278
           #TSH                        19 1117.634   20.0449 0.0000 1.0000 -539.8172
 
-GRSP_abundance_mod   =pcount(~Obs+Robel ~1, data=GRSP_PCount, mixture="ZIP",K=100)
-confint (GRSP_abundance_mod, type="det", level=0.85) #indicates Clouds is uninformative parameter
-confint (GRSP_abundance_mod, type="state", level=0.85)
+BOBO_abundance_mod   =pcount(~Obs+Robel+DOY+Clouds ~Crop_Prop+Tree_Prop+HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=BOBO_PCount, mixture="ZIP",K=100)
+confint (BOBO_abundance_mod, type="state", level=0.85)
+confint (BOBO_abundance_mod, type="det", level=0.85) #clouds pretending
+
 
 #Top model, Coefs, CIs----
 BOBO_Top=pcount(~Obs+DOY+Robel   ~Crop_Prop+Tree_Prop+HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=BOBO_PCount, mixture="ZIP",K=100)
@@ -685,16 +688,9 @@ BOBO.plot <- ggplot(data = BOBO_Predicted_Sum)+ #set the data source for the plo
            stat="identity")+ #identity makes it use value provided, it can do stats here if you want
   scale_y_continuous(limits = c(0,8), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
-  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("Control","Spray","Spray-and-Seed"))+
+  theme_bar_SnS_leg()+
+  theme(axis.title.x = element_blank())+
   scale_x_discrete(breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
   geom_errorbar(aes(x = TSH, 
                     ymin = lower, 
@@ -705,7 +701,7 @@ BOBO.plot <- ggplot(data = BOBO_Predicted_Sum)+ #set the data source for the plo
   labs(y = "Birds per Ha", 
        x = "Time Since Herbicide (y)", 
        fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Bobolinks")  #can use this to set a main title above the plot
+  ggtitle("C. Bobolinks")  #can use this to set a main title above the plot
 BOBO.plot
 
 #__________________________####
@@ -751,18 +747,18 @@ GRSP_Landscape_mods(GRSP_PCount) #>>Stage2: no landscape----
           #CropProp          13 706.7796    2.9416 0.0915 0.9310 -340.3898
           #TreeProp          13 707.3448    3.5069 0.0690 1.0000 -340.6724
 
-GRSP_landscape_mod   =pcount(~Obs+Robel ~Herb_Prop, data=GRSP_PCount, mixture="ZIP",K=100)
-confint(GRSP_landscape_mod, type="state", level=0.85) #Herb_Prop pretending
+GRSP_landscape_mod   =pcount(~Obs+Robel ~Herb_Prop+offset(log(Area_ha)), data=GRSP_PCount, mixture="ZIP",K=100)
+confint(GRSP_landscape_mod, type="state", level=0.85) 
 
 GRSP_Abundance_mods = function(df) {
-  null                       =pcount(~Obs+Robel   ~offset(log(Area_ha)), data=df, mixture="ZIP", K=100)
-  TSH                        =pcount(~Obs+Robel   ~TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  TSH_GrazingTreat           =pcount(~Obs+Robel   ~TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat                  =pcount(~Obs+Robel   ~HerbTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat_GrazingTreat     =pcount(~Obs+Robel   ~HerbTreat+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat_TSH              =pcount(~Obs+Robel   ~HerbTreat*TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  HerbTreat_TSH_GrazingTreat =pcount(~Obs+Robel   ~HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
-  GrazingTreat               =pcount(~Obs+Robel   ~GrazingTreat+offset(log(Area_ha)), mixture="ZIP",data=df, K=100)
+  null                       =pcount(~Obs+Robel   ~Herb_Prop+offset(log(Area_ha)), data=df, mixture="ZIP", K=100)
+  TSH                        =pcount(~Obs+Robel   ~Herb_Prop+TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  TSH_GrazingTreat           =pcount(~Obs+Robel   ~Herb_Prop+TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat                  =pcount(~Obs+Robel   ~Herb_Prop+HerbTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat_GrazingTreat     =pcount(~Obs+Robel   ~Herb_Prop+HerbTreat+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat_TSH              =pcount(~Obs+Robel   ~Herb_Prop+HerbTreat*TSH+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  HerbTreat_TSH_GrazingTreat =pcount(~Obs+Robel   ~Herb_Prop+HerbTreat*TSH+GrazingTreat+offset(log(Area_ha)), data=df, mixture="ZIP",K=100)
+  GrazingTreat               =pcount(~Obs+Robel   ~Herb_Prop+GrazingTreat+offset(log(Area_ha)), mixture="ZIP",data=df, K=100)
   
   mods=list(null,TSH,TSH_GrazingTreat,HerbTreat, HerbTreat_GrazingTreat,HerbTreat_TSH,HerbTreat_TSH_GrazingTreat,GrazingTreat)
   names=c("null","TSH","TSH+GrazingTreat","HerbTreat", "HerbTreat+GrazingTreat","HerbTreat*TSH","HerbTreat*TSH+GrazingTreat","GrazingTreat")
@@ -782,18 +778,21 @@ GRSP_Abundance_mods(GRSP_PCount) #>>>Stage 3:  null ----
           # TSH+GrazingTreat           17 713.3546    7.7984 0.0088 0.9921 -339.6773
           # HerbTreat*TSH+GrazingTreat 25 713.5797    8.0234 0.0079 1.0000 -331.7899
 
-BOBO_abundance_mod   =pcount(~Obs+Robel ~HerbYesNo*TSH+GrazingTreat, data=BOBO_PCount, mixture="ZIP",K=100)
-confint (BOBO_abundance_mod, type="det", level=0.85) #indicates Clouds is uninformative parameter
-confint (BOBO_abundance_mod, type="state", level=0.85)
+GRSP_abundance_mod   =pcount(~Obs+Robel ~Herb_Prop + offset(log(Area_ha)), data=GRSP_PCount, mixture="ZIP",K=100)
+confint (GRSP_abundance_mod, type="det", level=0.85) 
+confint (GRSP_abundance_mod, type="state", level=0.85)
 
 #>>Top model, Coefs, CIs----
 
-GRSP_KindaTop=pcount(~Robel+Obs+HerbTreat ~offset(log(Area_ha)), data=GRSP_PCount, mixture="ZIP",K=100)
+GRSP_KindaTop=pcount(~Robel+Obs ~Herb_Prop + HerbTreat + GrazingTreat + offset(log(Area_ha)), data=GRSP_PCount, mixture="ZIP",K=100)
+
 #summary(GRSP_KindaTop)
 GRSP_Abund_coef_df=Coefficients(GRSP_KindaTop) 
-#Grasshopper sparrow graph----
-GRSP_newdata = data.frame(HerbTreat = c("Con", "SnS", "Spr"),
-                          Area_ha = 1)
+#>>Grasshopper sparrow graph----
+GRSP_newdata = data.frame(GrazingTreat = c("None","None","None","SLS","SLS","SLS","IES","IES","IES"),
+                          HerbTreat = c("Con", "SnS", "Spr"),
+                          Area_ha = 1,
+                          Herb_Prop = 0.59)
 
 GRSP_Predicted=PredictedValues(GRSP_KindaTop,GRSP_newdata)
 GRSP_Predicted_Sum=GRSP_Predicted %>% 
@@ -809,18 +808,10 @@ GRSP.plot <- ggplot(data = GRSP_Predicted_Sum)+ #set the data source for the plo
                fill=HerbTreat), #what you want to use as your treatment to color the boxes
            position=dodge, # you can also leave position blank and it will stack them
            stat="identity")+ #identity makes it use value provided, it can do stats here if you want
-  scale_y_continuous(limits = c(0,5), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0,6), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
-  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("Control","Spray","Spray-and-Seed"))+
+  theme_bar_SnS_leg()+
   scale_x_discrete(breaks=c("Con","Spr","SnS"))+
   geom_errorbar(aes(x = HerbTreat, 
                     ymin = lower, 
@@ -938,17 +929,10 @@ EAME.plot <- ggplot(data = EAME_Predicted_Sum)+ #set the data source for the plo
            position=dodge, # you can also leave position blank and it will stack them
            stat="identity")+ #identity makes it use value provided, it can do stats here if you want
   scale_y_continuous(limits = c(0,17), expand = c(0, 0)) +
-  #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
-  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("Control","Spray","Spray-and-Seed"))+
+  theme_bar_SnS_leg()+
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank())+
   scale_x_discrete(breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
   geom_errorbar(aes(x = TSH, 
                     ymin = lower, 
@@ -959,7 +943,7 @@ EAME.plot <- ggplot(data = EAME_Predicted_Sum)+ #set the data source for the plo
   labs(y = "Birds per Ha", 
        x = "Time Since Herbicide (y)", 
        fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Meadowlarks")  #can use this to set a main title above the plot
+  ggtitle("B. Meadowlarks")  #can use this to set a main title above the plot
 EAME.plot
 #__________________________####
 
@@ -1056,6 +1040,7 @@ RWBL_newdata = data.frame(TSH=c("a","a","a","b","b","b","c","c","c","d","d","d")
 
 RWBL_Predicted=PredictedValues(RWBL_Top,RWBL_newdata)
 RWBL_Predicted$HerbTreat=factor(RWBL_Predicted$HerbTreat,levels=c("Con","Spr","SnS")) #ordering
+
 RWBL.plot <- ggplot(data = RWBL_Predicted)+ #set the data source for the plot
   geom_bar(aes(y=Predicted,  
                x=TSH, 
@@ -1064,16 +1049,9 @@ RWBL.plot <- ggplot(data = RWBL_Predicted)+ #set the data source for the plot
            stat="identity")+ #identity makes it use value provided, it can do stats here if you want
   scale_y_continuous(limits = c(0,8), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
-  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("Control","Spray","Spray-and-Seed"))+
+  theme_bar_SnS_leg()+
+  theme(axis.title.y = element_blank())+
   scale_x_discrete(breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
   geom_errorbar(aes(x = TSH, 
                     ymin = lower, 
@@ -1084,7 +1062,7 @@ RWBL.plot <- ggplot(data = RWBL_Predicted)+ #set the data source for the plot
   labs(y = "Birds per Ha", 
        x = "Time Since Herbicide (y)", 
        fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Red-winged Blackbirds")  #can use this to set a main title above the plot
+  ggtitle("D. Red-winged Blackbirds")  #can use this to set a main title above the plot
 RWBL.plot
 
 
@@ -1146,6 +1124,7 @@ HESP_Occu_mods = function(df) {
   print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
   
 }
+
 HESP_Occu_mods(HESP_Occu) #>>Stage 3: HerbTreat*TSH ----
           #                            K      AIC Delta_AIC  AICWt Cum.Wt        LL
           # HerbTreat*TSH              16 312.0452    0.0000 0.8258 0.8258 -140.0226
@@ -1162,7 +1141,7 @@ confint (HESP_occu_mod, type="det", level=0.85) #all good
 confint (HESP_occu_mod, type="state", level=0.85) #all good
 
 ##>>Top model, Coefs, CIs----
-HESP_Top=occu(~Robel+Clouds   ~Herb_Prop+HerbTreat*TSH, data=HESP_Occu)
+HESP_Top=occu(~Robel+Clouds   ~HerbTreat*TSH, data=HESP_Occu)
 #summary(HESP_Top)
 HESP_Abund_coef_df=Coefficients(HESP_Top) 
 #>>Henslow's Sparrow Graph----
@@ -1187,18 +1166,10 @@ HESP.plot <- ggplot(data = HESP_Predicted_Sum)+ #set the data source for the plo
                fill=HerbTreat), #what you want to use as your treatment to color the boxes
            position=dodge, # you can also leave position blank and it will stack them
            stat="identity")+ #identity makes it use value provided, it can do stats here if you want
-  scale_y_continuous(limits = c(0,1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0,1), expand = c(0, 0),breaks=c(0,.2,.4,.6,.8,1)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
-  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("Control","Spray","Spray-and-Seed"))+
+  theme_bar_SnS_leg()+
   scale_x_discrete(breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
   geom_errorbar(aes(x = TSH, 
                     ymin = lower, 
@@ -1209,7 +1180,7 @@ HESP.plot <- ggplot(data = HESP_Predicted_Sum)+ #set the data source for the plo
   labs(y = "Occupancy Probability", 
        x = "Time Since Herbicide (y)", 
        fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Henslow's Sparrows")  #can use this to set a main title above the plot
+  ggtitle("E. Henslow's Sparrows")  #can use this to set a main title above the plot
 HESP.plot
 
 #__________________________####
@@ -1298,7 +1269,8 @@ SEWR_Abund_coef_df=Coefficients(SEWR_Top)
 SEWR_newdata = data.frame(TSH=c("a","a","a","a","a","a","a","a","a","b","b","b","b","b","b","b","b","b","c","c","c","c","c","c","c","c","c","d","d","d","d","d","d","d","d","d"),
                           GrazingTreat = c("None","None","None","SLS","SLS","SLS","IES","IES","IES"),
                           HerbTreat = c("Con", "SnS", "Spr"),
-                          Area_ha = 1)
+                          Area_ha = 1,
+                          Tree_Prop=.19)
 
 SEWR_Predicted=PredictedValues(SEWR_Top,SEWR_newdata)
 SEWR_Predicted_Sum=SEWR_Predicted %>% 
@@ -1314,19 +1286,11 @@ SEWR.plot <- ggplot(data = SEWR_Predicted_Sum)+ #set the data source for the plo
                fill=HerbTreat), #what you want to use as your treatment to color the boxes
            position=dodge, # you can also leave position blank and it will stack them
            stat="identity")+ #identity makes it use value provided, it can do stats here if you want
-  scale_y_continuous(limits = c(0,1), expand = c(0, 0)) +
-  #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
-  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
-  #scale_x_discrete(breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
+  scale_y_continuous(limits = c(0,1), expand = c(0, 0),breaks=c(0,.2,.4,.6,.8,1)) +
+  scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("Control","Spray","Spray-and-Seed"))+
+  theme_bar_SnS_leg()+  #scale_x_discrete(breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
+  theme(axis.text.x = element_blank(),
+        axis.title.y = element_blank())+
   geom_errorbar(aes(x = HerbTreat, 
                     ymin = lower, 
                     ymax = upper), #you need to use group so it knows to distribute the bars across your groups
@@ -1335,7 +1299,7 @@ SEWR.plot <- ggplot(data = SEWR_Predicted_Sum)+ #set the data source for the plo
   labs(y = "Occupancy Probability", 
        x = "Herbicide Treatment", 
        fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Sedge Wren")  #can use this to set a main title above the plot
+  ggtitle("F. Sedge Wrens")
 SEWR.plot
 
 
@@ -1343,35 +1307,22 @@ SEWR.plot
 ####Making Final Graphs.####
 #********************************************************************************####
 
-#Extracting the legend
-legend_a <- get_legend(
-  DICK.plot + 
-    guides(color = guide_legend(nrow = 1)) +
-    theme(legend.position = "bottom")
-)
+#__________________________####
+#8. Creating the compiled figure----
+#install.packages ("patchwork")
+library ('patchwork')
 
+BirdHerbFig= (DICK.plot + EAME.plot +
+         BOBO.plot + RWBL.plot +
+         HESP.plot + SEWR.plot +
+         plot_layout(guides="collect",ncol=2))& 
+  theme(legend.position = 'bottom')
+
+BirdHerbFig
 #putting it together withing the legend
-all.Herb.plot <- plot_grid(
-  DICK.plot + theme(legend.position="none"),
-  EAME.plot + theme(legend.position="none"),
-  BOBO.plot + theme(legend.position="none"),
-  RWBL.plot + theme(legend.position="none"),
-  HESP.plot + theme(legend.position="none"),
-  SEWR.plot + theme(legend.position="none"),
-  align = 'vh',
-  #labels = c("A", "B", "C"),
-  hjust = -1,
-  nrow = 3
-)
-final.Herb.plot<-plot_grid(
-  all.Herb.plot,
-  legend_a, 
-  ncol = 1, 
-  rel_heights = c(1, .1))
-final.Herb.plot
 
-ggsave(filename="Avian_Herb_Result.jpg", plot = final.Herb.plot,
-       scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="Figs/")
+ggsave(filename="Avian_Herb_Graphs.jpg", plot = BirdHerbFig,
+       scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="/cloud/project/Figs")
 #__________________________####
 #9. Creating the summary figure----
 
@@ -1491,6 +1442,6 @@ BirdSummaryFig =ggplot(All_Birds, aes(TSH, Bird_Treatment, fill= Predicted)) +
 #plot.title=element_text(hjust=0.5)
 BirdSummaryFig
 ggsave(filename="BirdSummaryFig.jpg", plot = BirdSummaryFig,
-       scale = 1, width = 6, height = 8, units = c("in"),dpi = 300,path="Figs/")
+       scale = 1, width = 6, height = 8, units = c("in"),dpi = 300,path="/cloud/project/Figs")
 
 

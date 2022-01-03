@@ -488,7 +488,7 @@ DICK_Abundance_mods_Gr(DICK_PCount_Gr)
           #GrazingTreat             20 3310.507  118.4853 0.0000 1.0000 -1635.253
           #Null                     18 3317.782  125.7607 0.0000 1.0000 -1640.891
 
-DICK_abundance_mod_Gr   =pcount(~Obs+Wind+Robel ~Tree_Prop+Crop_Prop+HerbYesNo*GrazingTreat+Year, data=DICK_PCount_Gr, mixture="ZIP",K=100)
+DICK_abundance_mod_Gr   =pcount(~Obs+Wind+Robel ~Tree_Prop+Crop_Prop+HerbYesNo*GrazingTreat+Year+offset(log(Area_ha)), data=DICK_PCount_Gr, mixture="ZIP",K=100)
 confint (DICK_abundance_mod_Gr, type="det", level=0.85) #indicates Robel is uninformative parameter
 confint (DICK_abundance_mod_Gr, type="state", level=0.85) #indicates Robel is uninformative parameter
 
@@ -641,7 +641,7 @@ BOBO_Abundance_mods_Gr(BOBO_PCount_Gr)
             #HerbYesNo_GrazingTreat   22 3126.543   50.1447     0      1 -1541.272
             #Null                     19 3187.291  110.8930     0      1 -1574.646
             #HerbYesNo                20 3189.206  112.8073     0      1 -1574.603
-BOBO_abundance_mod_Gr   =pcount(~Obs+Wind+Clouds+DOY ~Tree_Prop+Herb_Prop+HerbYesNo*GrazingTreat, data=BOBO_PCount_Gr, mixture="ZIP",K=100)
+BOBO_abundance_mod_Gr   =pcount(~Obs+Wind+Clouds+DOY ~Tree_Prop+Herb_Prop+HerbYesNo*GrazingTreat+offset(log(Area_ha)), data=BOBO_PCount_Gr, mixture="ZIP",K=100)
 confint (BOBO_abundance_mod_Gr, type="det", level=0.85) #indicates Clouds is uninformative parameter
 confint (BOBO_abundance_mod_Gr, type="state", level=0.85) #all good
 
@@ -792,20 +792,20 @@ GRSP_Abundance_mods_Gr = function(df) {
 
 GRSP_Abundance_mods_Gr(GRSP_PCount_Gr) 
             #                          K      AIC Delta_AIC  AICWt Cum.Wt        LL
-            #HerbYesNo_v_GrazingTreat 23 2186.814    0.0000 0.6390 0.6390 -1070.407
-            #HerbYesNo_GrazingTreat   21 2189.175    2.3609 0.1963 0.8353 -1073.588
-            #GrazingTreat             20 2189.525    2.7113 0.1647 1.0000 -1074.763
-            #Null                     18 2239.296   52.4817 0.0000 1.0000 -1101.648
-            #HerbYesNo                19 2239.527   52.7128 0.0000 1.0000 -1100.763
+            #HerbYesNo_GrazingTreat   21 2156.292    0.0000 0.3639 0.3639 -1057.146
+            #HerbYesNo                19 2156.663    0.3705 0.3023 0.6662 -1059.331
+            #HerbYesNo_v_GrazingTreat 23 2157.819    1.5267 0.1696 0.8358 -1055.909
+            #GrazingTreat             20 2158.796    2.5034 0.1041 0.9398 -1059.398
+            #Null                     18 2159.892    3.5994 0.0602 1.0000 -1061.946
 
-GRSP_abundance_mod_Gr    =pcount(~Obs+Wind+Robel ~Herb_Prop+HerbYesNo*GrazingTreat+Year+offset(log(Area_ha)), data=GRSP_PCount_Gr, mixture="ZIP",K=100)
+GRSP_abundance_mod_Gr    =pcount(~Obs+Wind+Robel+Clouds ~Herb_Prop+HerbYesNo+GrazingTreat+Year+offset(log(Area_ha)), data=GRSP_PCount_Gr, mixture="ZIP",K=100)
 confint(GRSP_abundance_mod_Gr, type="det", level=0.85)  #clouds pretending
 confint(GRSP_abundance_mod_Gr, type="state", level=0.85)  #clouds pretending
 
 #_______________________________________
 
 #>>Top model, Coefs, CIs----
-GRSP_Top_Gr=pcount(~Obs+Wind+Robel   ~Herb_Prop+Year+HerbYesNo*GrazingTreat+offset(log(Area_ha)), data=GRSP_PCount_Gr, mixture="ZIP",K=100)
+GRSP_Top_Gr=pcount(~Obs+Wind+Robel   ~Herb_Prop+Year+HerbYesNo+GrazingTreat+offset(log(Area_ha)), data=GRSP_PCount_Gr, mixture="ZIP",K=100)
 #summary(GRSP_Top_Gr)
 GRSP_Abund_coef_df_Gr=Coefficients(GRSP_Top_Gr)
 confint(GRSP_Top_Gr,type="state",level=0.85)
@@ -1109,6 +1109,7 @@ RWBL_Abundance_mods_Gr(RWBL_PCount_Gr)
 RWBL_abundance_mod_Gr    =pcount(~Obs+StartTime+DOY+Robel ~Herb_Prop+Tree_Prop+Year+HerbYesNo+GrazingTreat+offset(log(Area_ha)), data=RWBL_PCount_Gr, mixture="ZIP",K=100)
 confint(RWBL_abundance_mod_Gr, type="det", level=0.85) #all good
 confint(RWBL_abundance_mod_Gr, type="state", level=0.85) #all good
+
 #_______________________________________
 
 ##>>Top model, Coefs, CIs----
@@ -1263,7 +1264,7 @@ confint(HESP_abundance_mod_Gr, type="state", level=0.85)#all good
 
 ##>>Top model, Coefs, CIs----
 
-HESP_Top_Gr=pcount(~Obs+Clouds   ~Herb_Prop+Year+HerbYesNo*GrazingTreat+offset(log(Area_ha)), data=HESP_PCount_Gr, mixture="ZIP",K=100)
+HESP_Top_Gr=pcount(~Obs+Clouds+StartTime   ~Herb_Prop+Year+HerbYesNo*GrazingTreat+offset(log(Area_ha)), data=HESP_PCount_Gr, mixture="ZIP",K=100)
 summary(HESP_Top_Gr)
 HESP_Abund_coef_df_Gr=Coefficients(HESP_Top_Gr) 
 confint(HESP_Top_Gr,type="state",level=0.85)
