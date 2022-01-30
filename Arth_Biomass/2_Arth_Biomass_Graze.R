@@ -11,83 +11,49 @@
 #>>GRAZE n=18 sites, mix of experimental and non-experimental herbicide, 
 #used to assess interactions between herbicide and grazing
 
+#....................................................................................#####
+#1. Packages & Functions----
+#....................................................................................#
+#Load libraries----
 library(AICcmodavg)
 library(ggplot2)
-library(ggthemes)
-library(ggpubr)
-library(dplyr)
-library(gridExtra)
-library(multcomp)
-library(sjstats)
-library(lsr)
-library(lme4)
-library(statmod)
 library(tidyverse)
-library(cowplot)
 library(glmmTMB)
 library(ggeffects)
-library(effects)
-library(MASS)
-library(patchwork)
-
-#....................................................................................#####
-#1. Load Data & Functions----
-#....................................................................................#
 
 #>>Functions etc----
-dodge <- position_dodge(width=0.9) #(this is dumb, but not too hard to get around)
-
-theme_bar_Graze_leg <- function () { 
-  theme(text=element_text(size=10),
-        axis.title=element_text(face="bold", size=10),
-        axis.text=element_text(size=10,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=8, color="black"),
-        legend.title=element_text(size=8, color="black", face="bold"),
-        panel.grid=element_blank(),
-        plot.title=element_text(size=11, face="bold",hjust=0))
-}
 
 Data_Cleaning_Gr = function (df) {
+  
   #setting NAs from visits to 0
-  df$Orth[is.na(df$Orth)] <- 0
-  df$Hemipterans[is.na(df$Hemipterans)] <- 0
-  df$Cole_Ad[is.na(df$Cole_Ad)] <- 0
-  df$Aran[is.na(df$Aran)] <- 0
-  df$Lepi_La[is.na(df$Lepi_La)] <- 0
-  df$Lepi_Ad[is.na(df$Lepi_Ad)] <- 0
-  
-  df$Lepi<-df$Lepi_La+df$Lepi_Ad
-  
-  df = mutate(df, Birdfood=df$Orth + df$Lepi + df$Aran + df$Cole_Ad+df$Hemipterans)%>%
-    mutate(Temp=case_when(
-      Temp %in% 30:35 ~ 32,
-      Temp %in% 35:40 ~ 37,
-      Temp %in% 40:45 ~ 42,
-      Temp %in% 45:50 ~ 47,
-      Temp %in% 50:55 ~ 52,
-      Temp %in% 55:60 ~ 57,
-      Temp %in% 60:65 ~ 62,
-      Temp %in% 65:70 ~ 67,
-      Temp %in% 70:75 ~ 72,
-      Temp %in% 75:80 ~ 77,
-      Temp %in% 80:85 ~ 82,
-      Temp %in% 85:90 ~ 87,
-      Temp %in% 90:95 ~ 92,
-      Temp %in% 95:100 ~ 97,
-      Temp %in% 100:105 ~ 102,
-      Temp %in% 105:110 ~ 107,
-      Temp %in% 110:115 ~ 112,
-      Temp %in% 115:120 ~ 117))
+  df = mutate(df, Temperature=case_when(
+    Temperature %in% 30:35 ~ 32,
+    Temperature %in% 35:40 ~ 37,
+    Temperature %in% 40:45 ~ 42,
+    Temperature %in% 45:50 ~ 47,
+    Temperature %in% 50:55 ~ 52,
+    Temperature %in% 55:60 ~ 57,
+    Temperature %in% 60:65 ~ 62,
+    Temperature %in% 65:70 ~ 67,
+    Temperature %in% 70:75 ~ 72,
+    Temperature %in% 75:80 ~ 77,
+    Temperature %in% 80:85 ~ 82,
+    Temperature %in% 85:90 ~ 87,
+    Temperature %in% 90:95 ~ 92,
+    Temperature %in% 95:100 ~ 97,
+    Temperature %in% 100:105 ~ 102,
+    Temperature %in% 105:110 ~ 107,
+    Temperature %in% 110:115 ~ 112,
+    Temperature %in% 115:120 ~ 117))
   
   #replacing missing covariates to the mean
-  df$Temp               [is.na(df$Clouds_1)]            <- mean(df$Temp,na.rm=T)
+  df$Temperature        [is.na(df$Temperature)]         <- mean(df$Temperature,na.rm=T)
   df$Winds              [is.na(df$Winds)]               <- mean(df$Winds,na.rm=T)
   df$OrdinalSamplingDate[is.na(df$OrdinalSamplingDate)] <- mean(df$OrdinalSamplingDate,na.rm=T)
   df$StartTime          [is.na(df$StartTime)]           <- mean(df$StartTime,na.rm=T)
   
   #rounding and and rescaling large numbers by dividing by 100
-  df$Temp <- round((df$Temp/100),2)
+  df$Temperature <- round((df$Temperature/100),2)
   df$OrdinalSamplingDate <- round((df$OrdinalSamplingDate/100),2)
   df$StartTime <- round(df$StartTime,4)
   
@@ -99,7 +65,6 @@ Data_Cleaning_Gr = function (df) {
   df$Year[df$Year==2015]='a'
   df$Year[df$Year==2016]='b'
   df$Year[df$Year==2017]='c'
-  df$Year[df$Year==2018]='d'
   
   df$GrazingTreat[df$GrazingTreat=='Hay']='None' #Haying is technically no grazing, so this code combines those two categories in a new column
   df$GrazingTreat[df$GrazingTreat=='IES']='IES'
@@ -108,511 +73,322 @@ Data_Cleaning_Gr = function (df) {
   df$GrazingTreat=factor(df$GrazingTreat)
   
   df
+  df%>%
+    filter(!(is.na(Weight_mg)))
 }
 
 AICregress_Nuisance_mods <- function(y,df,f) { #NB = negative binomial
-  Null                   = glmmTMB(y~1+                                                (1|Pasture),REML="FALSE", family=f, data=df)
-  SweepVac               = glmmTMB(y~SweepVac+                                         (1|Pasture),REML="FALSE", family=f, data=df)
-  Winds                  = glmmTMB(y~Winds+                                            (1|Pasture),REML="FALSE", family=f, data=df)
-  OrdDate                = glmmTMB(y~OrdinalSamplingDate+                              (1|Pasture),REML="FALSE", family=f, data=df)
-  Temp                   = glmmTMB(y~Temp+                                             (1|Pasture),REML="FALSE", family=f, data=df)
-  StartTime              = glmmTMB(y~StartTime+                                        (1|Pasture),REML="FALSE", family=f, data=df)
-  SamplingCond           = glmmTMB(y~Winds+Temp+StartTime+                             (1|Pasture),REML="FALSE", family=f, data=df)
-  SamplingCond_OrdDate   = glmmTMB(y~OrdinalSamplingDate+StartTime+Winds+Temp+         (1|Pasture),REML="FALSE", family=f, data=df)
-  SamplingCond_Method    = glmmTMB(y~Winds+Temp+StartTime+SweepVac+                    (1|Pasture),REML="FALSE", family=f, data=df)
-  OrdDate_Method         = glmmTMB(y~OrdinalSamplingDate+SweepVac+                     (1|Pasture),REML="FALSE", family=f, data=df)
-  Global                 = glmmTMB(y~SweepVac+Winds+OrdinalSamplingDate+Temp+StartTime+(1|Pasture),REML="FALSE", family=f, data=df)
+  Null                   = glmmTMB(y~1+                                                       (1|Pasture),REML="FALSE", family=f, data=df)
+  SweepVac               = glmmTMB(y~SweepVac+                                                (1|Pasture),REML="FALSE", family=f, data=df)
+  Winds                  = glmmTMB(y~Winds+                                                   (1|Pasture),REML="FALSE", family=f, data=df)
+  OrdDate                = glmmTMB(y~OrdinalSamplingDate+                                     (1|Pasture),REML="FALSE", family=f, data=df)
+  Temp                   = glmmTMB(y~Temperature+                                             (1|Pasture),REML="FALSE", family=f, data=df)
+  StartTime              = glmmTMB(y~StartTime+                                               (1|Pasture),REML="FALSE", family=f, data=df)
+  SamplingCond           = glmmTMB(y~Winds+Temperature+StartTime+                             (1|Pasture),REML="FALSE", family=f, data=df)
+  SamplingCond_OrdDate   = glmmTMB(y~OrdinalSamplingDate+StartTime+Winds+Temperature+         (1|Pasture),REML="FALSE", family=f, data=df)
+  SamplingCond_Method    = glmmTMB(y~Winds+Temperature+StartTime+SweepVac+                    (1|Pasture),REML="FALSE", family=f, data=df)
+  OrdDate_Method         = glmmTMB(y~OrdinalSamplingDate+SweepVac+                            (1|Pasture),REML="FALSE", family=f, data=df)
+  Global                 = glmmTMB(y~SweepVac+Winds+OrdinalSamplingDate+Temperature+StartTime+(1|Pasture),REML="FALSE", family=f, data=df)
   
   mods=list(Null, SweepVac,  Winds,  OrdDate,  Temp,  StartTime,  SamplingCond,  SamplingCond_OrdDate,  SamplingCond_Method,  OrdDate_Method,  Global)
   names=c("Null","SweepVac","Winds","OrdDate","Temp","StartTime","SamplingCond","SamplingCond_OrdDate","SamplingCond_Method","OrdDate_Method","Global")
   print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
-} 
-AICregress_Nuisance_mods_ZIP <- function(y,df,f) { #NB = negative binomial
-  Null                   = glmmTMB(y~1+                                                (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  SweepVac               = glmmTMB(y~SweepVac+                                         (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  Winds                  = glmmTMB(y~Winds+                                            (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  OrdDate                = glmmTMB(y~OrdinalSamplingDate+                              (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  Temp                   = glmmTMB(y~Temp+                                             (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  StartTime              = glmmTMB(y~StartTime+                                        (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  SamplingCond           = glmmTMB(y~Winds+Temp+StartTime+                             (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  SamplingCond_OrdDate   = glmmTMB(y~OrdinalSamplingDate+StartTime+Winds+Temp+         (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  SamplingCond_Method    = glmmTMB(y~Winds+Temp+StartTime+SweepVac+                    (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  OrdDate_Method         = glmmTMB(y~OrdinalSamplingDate+SweepVac+                     (1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  Global                 = glmmTMB(y~SweepVac+Winds+OrdinalSamplingDate+Temp+StartTime+(1|Pasture),REML="FALSE", family=poisson, ziformula=~1, data=df)
-  
-  mods=list(Null, SweepVac,  Winds,  OrdDate,  Temp,  StartTime,  SamplingCond,  SamplingCond_OrdDate,  SamplingCond_Method,  OrdDate_Method,  Global)
-  names=c("Null","SweepVac","Winds","OrdDate","Temp","StartTime","SamplingCond","SamplingCond_OrdDate","SamplingCond_Method","OrdDate_Method","Global")
-  print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
-} 
-#Filtering to just get the herbicide Pastures, minus STE 2015 (includes BSH, DUN, GIL, LTR, RC2, could add RCH2014 depending)
-
-
-#>>Importing the data----
-ArthPatch_All=read.csv("/cloud/project/Arth_Abund/PatchArthData_Landscape_9.10.2019.csv")
-#View(ArthPatch_All)
-ArthPatch_Graze=Data_Cleaning_Gr (ArthPatch_All)
-#View(ArthPatch_Graze)
-
-save(ArthPatch_Graze, file="/cloud/project/Arth_Abund/ArthPatch_Graze.Rdata")
-
+}
+dodge <- position_dodge(width=0.9) #(this is dumb, but not too hard to get around)
 
 #....................................................................................#####
-#2. Dealing with Extreme Outliers ----
+#2. Load Data & Biometric equations----
 #....................................................................................#
+setwd("/cloud/project/Arth_Biomass")
+#Importing the data.
+Biomass_All=read.csv(file="Biomass_16.10.2019.csv",header=T)
+#View(Biomass_All)
+#str(Biomass_All)
 
 
-#    
-# boxplot_outliers          =function(df,y,title){
-#    ggplot(df, aes(x=Year, y=y))+ 
-#       geom_boxplot(outlier.colour="dark red",outlier.shape=19,outlier.size=2)+
-#       ggtitle(title)+
-#       xlab("Study Years")+
-#       ylab("Abundance")+
-#       scale_x_discrete(labels=(c("2015","2016",'2017')))+
-#       theme_classic()+
-#       theme(text=element_text(size=10),axis.title=element_text(face="bold", size=10),
-#             axis.text=element_text(size=10,color="black"),
-#             axis.line=element_line(color="black",size=1),
-#             panel.grid=NULL,
-#             panel.background=element_rect("snow2"),
-#             plot.title = element_text(hjust = 0.5),
-#             title=element_text(size=14,color="black"))
-#   }
-#     Orth_Boxplot_Graze     =boxplot_outliers(ArthPatch_Graze,(ArthPatch_Graze$Orth),        "Orth")
-#     Aran_Boxplot_Graze     =boxplot_outliers(ArthPatch_Graze,(ArthPatch_Graze$Aran),        "Aran")
-#     Cole_Boxplot_Graze     =boxplot_outliers(ArthPatch_Graze,(ArthPatch_Graze$Cole_Ad),     "Cole")
-#     Lepi_Boxplot_Graze     =boxplot_outliers(ArthPatch_Graze,(ArthPatch_Graze$Lepi),        "Lepi")
-#     Hemi_Boxplot_Graze     =boxplot_outliers(ArthPatch_Graze,(ArthPatch_Graze$Hemipterans), "Hemi")
-#     Birdfood_Boxplot_Graze =boxplot_outliers(ArthPatch_Graze,(ArthPatch_Graze$Birdfood),    "Total")
-#     
-#     all.Graze.boxplot <- plot_grid(
-#       Orth_Boxplot_Graze   + theme(legend.position="none"),
-#       Aran_Boxplot_Graze   + theme(legend.position="none"),
-#       Cole_Boxplot_Graze   + theme(legend.position="none"),
-#       Lepi_Boxplot_Graze   + theme(legend.position="none"),
-#       Hemi_Boxplot_Graze   + theme(legend.position="none"),
-#       Birdfood_Boxplot_Graze+ theme(legend.position="none"),
-#       
-#       align   = 'vh',
-#       #labels = c("A", "B", "C"),
-#       hjust   = -1,
-#       nrow    = 3
-#     )
-#     print(all.Graze.boxplot)   
+#calculating biomass, Sabo et al. 2002
+#W=aL^b
+#Aranea:      W = 0.05 * L ^ 2.74
+#Orthoptera:  W = 0.03 * L ^ 2.55
+#Coleoptera:  W = 0.04 * L ^ 2.64 (NOT USED)
 
-cap_outliers = function (y){
-  qnt  <- quantile(y, probs=c(.25, .75), na.rm = T) #don't worry about the particulars of this code, just replace the variable names you want to work with. (e.g., replace Orth with Hoppers, etc.)
-  caps <- quantile(y, probs=c(.01, .99), na.rm = T)
-  H <- 3 * IQR    (y,na.rm = T)
-  y[y < (qnt[1] - H)] <- caps[1]
-  y[y > (qnt[2] + H)] <- caps[2]
-  y=round(y, 0)
-}
+#Sample et al. 1993 
+#e^b(LxW)^a      b       a
+#Coleoptera:     -1.857  1.296
+#Lepidoptera ad: -2.607  1.457
+#Lepidoptera la  -3.138  1.483
+e<-exp(1)
+Biomass_All$Weight_mg <- ifelse(Biomass_All$Order                             =="orth",   0.03*Biomass_All$Length^2.55,
+                                ifelse(Biomass_All$Order                      =="cole_ad",e^-1.857*((Biomass_All$Length*Biomass_All$Width)^1.296),
+                                       ifelse(Biomass_All$Order               =="aran",   0.05*Biomass_All$Length^2.74,
+                                              ifelse(Biomass_All$Order        =="lepi_ad",e^-2.607*(Biomass_All$Length*Biomass_All$Width)^1.457,
+                                                     ifelse(Biomass_All$Order =="lepi_la",e^-3.138*(Biomass_All$Length*Biomass_All$Width)^1.483,
+                                                            NA  )))))
 
-ArthPatch_Graze$Orth_NO_Gr     =cap_outliers(ArthPatch_Graze$Orth)
-ArthPatch_Graze$Aran_NO_Gr     =cap_outliers(ArthPatch_Graze$Aran)
-ArthPatch_Graze$Cole_NO_Gr     =cap_outliers(ArthPatch_Graze$Cole_Ad)
-ArthPatch_Graze$Lepi_NO_Gr     =cap_outliers(ArthPatch_Graze$Lepi)
-ArthPatch_Graze$Hemi_NO_Gr     =cap_outliers(ArthPatch_Graze$Hemipterans)
-# 
-# boxplot_no_outliers    =function     (df,y,title){
-#     ggplot(df, aes(x=Year, y=y))+ 
-#      geom_boxplot(outlier.colour="dark red",outlier.shape=19,outlier.size=2)+
-#      ggtitle(title)+
-#       xlab("Study Years")+
-#       ylab("Abundance")+
-#       scale_x_discrete(labels=(c("2015","2016",'2017')))+
-#       theme_classic()+
-#       theme(text=element_text(size=10),axis.title=element_text(face="bold", size=10),
-#             axis.text=element_text(size=10,color="black"),
-#             axis.line=element_line(color="black",size=1),
-#             panel.grid=NULL,
-#             panel.background=element_rect("snow2"),
-#             plot.title = element_text(hjust = 0.5),
-#             title=element_text(size=14,color="black"))
-#     }
-# Orth_NO_Boxplot_Graze       =boxplot_no_outliers(ArthPatch_Graze,ArthPatch_Graze$Orth_NO,       "Orth")
-# Aran_NO_Boxplot_Graze       =boxplot_no_outliers(ArthPatch_Graze,ArthPatch_Graze$Aran_NO,       "Aran")
-# Cole_NO_Boxplot_Graze       =boxplot_no_outliers(ArthPatch_Graze,ArthPatch_Graze$Cole_NO,       "Cole")
-# Lepi_NO_Boxplot_Graze       =boxplot_no_outliers(ArthPatch_Graze,ArthPatch_Graze$Lepi_NO,       "Lepi")
-# Hemi_NO_Boxplot_Graze       =boxplot_no_outliers(ArthPatch_Graze,ArthPatch_Graze$Hemi_NO,       "Hemi")
-# Birdfood_NO_Boxplot_Graze   =boxplot_no_outliers(ArthPatch_Graze,ArthPatch_Graze$Birdfood_NO,   "Total")
-# 
-# all.GrazeNO.boxplot <- plot_grid(
-#   Orth_NO_Boxplot_Graze       + theme(legend.position="none"),
-#   Aran_NO_Boxplot_Graze       + theme(legend.position="none"),
-#   Cole_NO_Boxplot_Graze       + theme(legend.position="none"),
-#   Lepi_NO_Boxplot_Graze       + theme(legend.position="none"),
-#   Hemi_NO_Boxplot_Graze       + theme(legend.position="none"),
-#   Birdfood_NO_Boxplot_Graze   + theme(legend.position="none"),
-#   align   = 'vh',
-#   #labels = c("A", "B", "C"),
-#   hjust   = -1,
-#   nrow    = 3
-# )
-# print(all.GrazeNO.boxplot)   
 
+IndivBiomass_Gr=Data_Cleaning_Gr(Biomass_All)
+IndivBiomass_Gr$Year=as.factor(IndivBiomass_Gr$Year)
+
+#getting just orthopteran Weight_mg
+Indiv_Orth_Gr=IndivBiomass_Gr%>%
+  filter(Order=="orth")
+
+Indiv_Aran_Gr=IndivBiomass_Gr%>%
+  filter(Order=="aran")
+
+Indiv_Cole_Gr=IndivBiomass_Gr%>%
+  filter(Order=="cole_ad")
+
+Indiv_Lepi_La_Gr=IndivBiomass_Gr%>%
+  filter(Order=="lepi_la")
+
+Indiv_Lepi_Ad_Gr=IndivBiomass_Gr%>%
+  filter(Order=="lepi_ad")
+
+summary(Indiv_Orth_Gr$Weight_mg)
+summary(Indiv_Aran_Gr$Weight_mg)
+summary(Indiv_Cole_Gr$Weight_mg)
+summary(Indiv_Lepi_La_Gr$Weight_mg)
+summary(Indiv_Lepi_Ad_Gr$Weight_mg)
+
+#save(Indiv_Orth_Gr, file="Indiv_Orth_Gr.Rdata")
+#load("Indiv_Orth.Rdata")
+#save(Indiv_Aran_Gr, file="Indiv_Aran_Gr.Rdata")
+#save(Indiv_Cole_Gr, file="Indiv_Cole_Gr.Rdata")
+#save(Indiv_Lepi_La_Gr, file="Indiv_Lepi_La_Gr.Rdata")
+#save(Indiv_Lepi_Ad_Gr, file="Indiv_Lepi_Ad_Gr.Rdata")
 
 #....................................................................................#####
 #3. Orthopteran (Orth) Abundance ----
 #....................................................................................#
 
-#>>Stage 1: Orth, (Winds)+Temp+(StartTime)+SweepVac+ ----
+#>>Stage 1: Orth, Temperature+ OrdinalSamplingDAte + Temperature + SweepVac + (wind) ----
+AICregress_Nuisance_mods(Indiv_Orth_Gr$Weight_mg,Indiv_Orth_Gr,gaussian)
+          #                     K      AIC Delta_AIC  AICWt Cum.Wt        LL
+          #Global               8 73823.59    0.0000 0.9999 0.9999 -36903.80
+          #OrdDate_Method       5 73841.50   17.9110 0.0001 1.0000 -36915.75
+          #SamplingCond_Method  7 74163.33  339.7357 0.0000 1.0000 -37074.66
+          #SweepVac             4 74182.77  359.1727 0.0000 1.0000 -37087.38
+          #SamplingCond_OrdDate 7 74184.93  361.3380 0.0000 1.0000 -37085.47
+          #OrdDate              4 74205.95  382.3518 0.0000 1.0000 -37098.97
+          #SamplingCond         6 74555.92  732.3260 0.0000 1.0000 -37271.96
+          #StartTime            4 74560.54  736.9506 0.0000 1.0000 -37276.27
+          #Winds                4 74574.47  750.8726 0.0000 1.0000 -37283.23
+          #Temp                 4 74576.02  752.4216 0.0000 1.0000 -37284.01
+          #Null                 3 74577.51  753.9182 0.0000 1.0000 -37285.76
 
-AICregress_Nuisance_mods(ArthPatch_Graze$Orth_NO_Gr,ArthPatch_Graze,nbinom1)
-#                      K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# SamplingCond_Method  7 9678.921    0.0000 0.3964 0.3964 -4832.460
-# Global               8 9679.602    0.6815 0.2819 0.6783 -4831.801
-# OrdDate_Method       5 9680.230    1.3096 0.2060 0.8843 -4835.115
-# SweepVac             4 9681.385    2.4648 0.1156 0.9999 -4836.693
-# Temp                 4 9696.037   17.1166 0.0001 1.0000 -4844.019
-# SamplingCond         6 9698.780   19.8598 0.0000 1.0000 -4843.390
-# SamplingCond_OrdDate 7 9700.139   21.2180 0.0000 1.0000 -4843.069
-# Null                 3 9700.686   21.7657 0.0000 1.0000 -4847.343
-# OrdDate              4 9700.956   22.0356 0.0000 1.0000 -4846.478
-# Winds                4 9702.125   23.2044 0.0000 1.0000 -4847.062
-# StartTime            4 9702.528   23.6076 0.0000 1.0000 -4847.264
-Orth_Nuisance_mod_Gr = glmmTMB(Orth_NO_Gr~Winds+Temp+StartTime+SweepVac+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
-confint(Orth_Nuisance_mod_Gr,level=0.85)
+Orth_Nuisance_mod_Gr = glmmTMB(Weight_mg~ Temperature+SweepVac+StartTime+OrdinalSamplingDate+Winds+(1|Pasture),REML="FALSE", family=gaussian, data=Indiv_Orth_Gr)
+confint(Orth_Nuisance_mod_Gr,level=0.85) #winds pretending
 
-#>>Stage 2: Orth, HerbYesNo + GrazingTreat----
+#>>Stage 2: HerbYesNo*Grazing, but null is very much competitive----
 Orth_Graze_mods=function(y,df) { 
-  Null                       = glmmTMB(y~Year+Temp+SweepVac+                               (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo                  = glmmTMB(y~Year+Temp+SweepVac+HerbYesNo_alltime+             (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_v_Grazing        = glmmTMB(y~Year+Temp+SweepVac+HerbYesNo_alltime*GrazingTreat+(1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_GrazingTreat     = glmmTMB(y~Year+Temp+SweepVac+HerbYesNo_alltime+GrazingTreat+(1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  GrazingTreat               = glmmTMB(y~Year+Temp+SweepVac+GrazingTreat+                  (1|Pasture),REML="FALSE", family=nbinom1, data=df)
+  Null                       = glmmTMB(y~Year+Temperature+SweepVac+OrdinalSamplingDate+StartTime+                               (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo                  = glmmTMB(y~Year+Temperature+SweepVac+OrdinalSamplingDate+StartTime+HerbYesNo_alltime+             (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_v_Grazing        = glmmTMB(y~Year+Temperature+SweepVac+OrdinalSamplingDate+StartTime+HerbYesNo_alltime*GrazingTreat+(1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_GrazingTreat     = glmmTMB(y~Year+Temperature+SweepVac+OrdinalSamplingDate+StartTime+HerbYesNo_alltime+GrazingTreat+(1|Pasture),REML="FALSE", family=gaussian, data=df)
+  GrazingTreat               = glmmTMB(y~Year+Temperature+SweepVac+OrdinalSamplingDate+StartTime+GrazingTreat+                  (1|Pasture),REML="FALSE", family=gaussian, data=df)
   
   mods=list(Null,  HerbYesNo,  HerbYesNo_v_Grazing,  HerbYesNo_GrazingTreat,  GrazingTreat)
   names=c( "Null","HerbYesNo","HerbYesNo*Grazing",  "HerbYesNo+GrazingTreat","GrazingTreat")
   print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
 } 
-Orth_Graze_mods(ArthPatch_Graze$Orth_NO_Gr,ArthPatch_Graze)
-#                         K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# HerbYesNo+GrazingTreat 10 9455.387    0.0000 0.4230 0.4230 -4717.694
-# HerbYesNo               8 9455.535    0.1478 0.3929 0.8159 -4719.768
-# HerbYesNo*Grazing      12 9457.056    1.6687 0.1836 0.9995 -4716.528
-# Null                    7 9470.068   14.6803 0.0003 0.9998 -4728.034
-# GrazingTreat            9 9470.476   15.0884 0.0002 1.0000 -4726.238
 
+Orth_Graze_mods(Indiv_Orth_Gr$Weight_mg,Indiv_Orth_Gr)
+          #                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
+          #HerbYesNo*Grazing      14 73772.83    0.0000 0.2757 0.2757 -36872.42
+          #Null                    9 73772.99    0.1561 0.2550 0.5307 -36877.50
+          #HerbYesNo              10 73773.13    0.2981 0.2375 0.7683 -36876.57
+          #HerbYesNo+GrazingTreat 12 73774.47    1.6367 0.1216 0.8899 -36875.24
+          #GrazingTreat           11 73774.67    1.8359 0.1101 1.0000 -36876.33
 
-#>>Top Model & Predicted Values----
-Orth_Top_Gr = glmmTMB(Orth_NO_Gr~SweepVac+Year+Temp+HerbYesNo_alltime+GrazingTreat+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
-ggpredict(Orth_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","Year","SweepVac"),ci.lvl=0.85, back.transform=TRUE, append=TRUE)
-Orth_Pred_Gr = as.data.frame(ggpredict(Orth_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","Year","SweepVac"),ci.lvl=0.85, back.transform=TRUE, append=TRUE))
-
-colnames(Orth_Pred_Gr)=c("HerbYesNo", "Predicted","SE","Lower","Upper","GrazingTreat","Year","SweepVac") #renames columns
-#View(Orth_Pred_Gr) 
-
-Orth_Pred_Gr_Sum= Orth_Pred_Gr %>% 
-  group_by(HerbYesNo, GrazingTreat) %>% 
-  summarise_at(vars(Predicted, Lower, Upper), mean) #averages out the grazing treatment
-#View(Orth_Pred_Gr_Sum) #optional; viewing it so we can make sure things are working 
-
-#now time to plot orths!!
-Orth_Pred_Gr_Sum$GrazingTreat=factor(Orth_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Orth_Plot_Gr=ggplot(data=Orth_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
-  geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
-  scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
-  theme( axis.title.x=element_blank())+
-  theme_bar_Graze_leg()+  
-  #plot.title=element_text(hjust=0.5)
-  scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
-  scale_y_continuous(limits = c(0,40), expand = c(0, 0)) +
-  geom_errorbar(aes(x = GrazingTreat, ymin = Lower, ymax = Upper,group = HerbYesNo),position = dodge, width = 0.2)+
-  labs(y = "Orthoptera/sample",x="Grazing Treatment",fill="Herbicide Applied?")
-
-print(Orth_Plot_Gr)
+#Top Model & Predicted Values #####
+Orth_Graze_top  = glmmTMB(Weight_mg~Year+Temperature+SweepVac+OrdinalSamplingDate+StartTime+HerbYesNo_alltime*GrazingTreat+(1|Pasture),REML="FALSE", family=gaussian, data=Indiv_Orth_Gr)
+confint(Orth_Graze_top) #Herb pretending
 
 #....................................................................................#####
-#3. Hemipteran (Hemi) Abundance ----
+#4. Araneae (Aran) Biomass ----
 #....................................................................................#
 
+#>>Stage 1: Aran, OrdinalSamplingDate+SweepVac----
+AICregress_Nuisance_mods(Indiv_Aran_Gr$Weight_mg,Indiv_Aran_Gr,gaussian)
+          #                     K      AIC Delta_AIC  AICWt Cum.Wt        LL
+          #OrdDate_Method       5 28741.62    0.0000 0.9093 0.9093 -14365.81
+          #Global               8 28746.23    4.6096 0.0907 1.0000 -14365.12
+          #SweepVac             4 28785.57   43.9517 0.0000 1.0000 -14388.79
+          #SamplingCond_Method  7 28787.49   45.8656 0.0000 1.0000 -14386.74
+          #OrdDate              4 28836.60   94.9794 0.0000 1.0000 -14414.30
+          #SamplingCond_OrdDate 7 28841.10   99.4804 0.0000 1.0000 -14413.55
+          #Winds                4 28876.29  134.6720 0.0000 1.0000 -14434.15
+          #Null                 3 28877.01  135.3939 0.0000 1.0000 -14435.51
+          #Temp                 4 28878.59  136.9717 0.0000 1.0000 -14435.30
+          #StartTime            4 28879.00  137.3803 0.0000 1.0000 -14435.50
+          #SamplingCond         6 28880.04  138.4205 0.0000 1.0000 -14434.02
 
-#>>Stage 1: Hemi, StartTime+SweepVac+(Winds)+(Temp)+OrdinalSamplingDate----
-AICregress_Nuisance_mods(ArthPatch_Graze$Hemi_NO_Gr,ArthPatch_Graze,nbinom1)
-#                     K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# Global               8 11903.85    0.0000 0.8940 0.8940 -5943.925
-# SamplingCond_Method  7 11908.31    4.4638 0.0959 0.9899 -5947.157
-# OrdDate_Method       5 11913.39    9.5355 0.0076 0.9975 -5951.693
-# SweepVac             4 11915.63   11.7798 0.0025 1.0000 -5953.815
-# StartTime            4 11933.88   30.0339 0.0000 1.0000 -5962.942
-# SamplingCond_OrdDate 7 11935.16   31.3056 0.0000 1.0000 -5960.578
-# SamplingCond         6 11936.87   33.0227 0.0000 1.0000 -5962.436
-# OrdDate              4 11942.29   38.4382 0.0000 1.0000 -5967.144
-# Null                 3 11942.49   38.6423 0.0000 1.0000 -5968.246
-# Temp                 4 11943.79   39.9361 0.0000 1.0000 -5967.893
-# Winds                4 11944.05   40.2023 0.0000 1.0000 -5968.026
-Hemi_Nuisance_mod_Gr = glmmTMB(Hemi_NO_Gr~StartTime+Winds+Temp+SweepVac+OrdinalSamplingDate+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
-confint(Hemi_Nuisance_mod_Gr,level=0.85)
-summary(Hemi_Nuisance_mod_Gr)
-
-#>>Stage 2: Hemi, HerbYesNo+GrazingTreat---
-Hemi_Graze_mods=function(y,df) { 
-  Null                       = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+                                   (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo                  = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+                 (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_v_GrazingTreat   = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime*GrazingTreat+    (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_GrazingTreat     = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+GrazingTreat+    (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  GrazingTreat               = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+GrazingTreat+                      (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  
-  mods=list(Null,  HerbYesNo,  HerbYesNo_v_GrazingTreat,  HerbYesNo_GrazingTreat,  GrazingTreat)
-  names=c( "Null","HerbYesNo","HerbYesNo*GrazingTreat",    "HerbYesNo+GrazingTreat","GrazingTreat")
-  print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
-} 
-
-Hemi_Graze_mods(ArthPatch_Graze$Hemi_NO_Gr,ArthPatch_Graze)
-#                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
-#HerbYesNo+GrazingTreat 11 11872.91    0.0000 0.3935 0.3935 -5925.453
-#HerbYesNo               9 11872.95    0.0431 0.3851 0.7786 -5927.475
-#HerbYesNo*GrazingTreat 13 11874.06    1.1503 0.2214 1.0000 -5924.029
-#Null                    8 11892.39   19.4785 0.0000 1.0000 -5938.193
-#GrazingTreat           10 11893.37   20.4582 0.0000 1.0000 -5936.683
-
-
-#>>Top Model & Predicted Values----
-
-Hemi_Top_Gr = glmmTMB(Hemi_NO_Gr~Year+StartTime+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+GrazingTreat+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
-#ggpredict(Hemi_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","GrazingTreat","Year"),ci.lvl=0.85, back.transform=TRUE, append=TRUE)
-Hemi_Pred_Gr = as.data.frame(ggpredict(Hemi_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","SweepVac","Year"),ci.lvl=0.85, back.transform=TRUE, append=TRUE))
-colnames(Hemi_Pred_Gr)=c("HerbYesNo", "Predicted","SE","Lower","Upper","GrazingTreat","SweepVac","Year") #renames columns
-#View(Hemi_Pred) 
-
-Hemi_Pred_Gr_Sum= Hemi_Pred_Gr %>% 
-  group_by(HerbYesNo, GrazingTreat) %>% 
-  summarise_at(vars(Predicted, Lower, Upper), mean) #averages out the grazing treatment
-#View(Hemi_Pred_Gr_Sum) #optional; viewing it so we can make sure things are working 
-
-#now time to plot Hemis!!
-Hemi_Pred_Gr_Sum$GrazingTreat=factor(Hemi_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Hemi_Plot_Gr=ggplot(data=Hemi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
-  geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
-  scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
-  theme( axis.title.x=element_blank())+
-  theme_bar_Graze_leg()+
-  #plot.title=element_text(hjust=0.5)
-  scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
-  scale_y_continuous(limits = c(0,85), expand = c(0, 0)) +
-  geom_errorbar(aes(x = GrazingTreat, ymin = Lower, ymax = Upper,group = HerbYesNo),position = dodge, width = 0.2)+
-  labs(y = "Hemiptera/sample",x="Grazing Treatment",fill="Herbicide Applied?")
-
-print(Hemi_Plot_Gr)
-
-
-#....................................................................................#####
-#5. Araneae (Aran) Abundance ----
-#....................................................................................#
-
-#>>Stage 1: Aran, OrdinalSamplingDate----
-
-AICregress_Nuisance_mods(ArthPatch_Graze$Aran_NO_Gr,ArthPatch_Graze,nbinom1)
-#                     K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# OrdDate              4 6932.711    0.0000 0.5492 0.5492 -3462.356
-# OrdDate_Method       5 6934.711    1.9999 0.2020 0.7512 -3462.356
-# SamplingCond_OrdDate 7 6934.922    2.2105 0.1819 0.9331 -3460.461
-# Global               8 6936.922    4.2103 0.0669 1.0000 -3460.461
-# SamplingCond         6 7018.317   85.6061 0.0000 1.0000 -3503.159
-# Temp                 4 7019.019   86.3077 0.0000 1.0000 -3505.510
-# SamplingCond_Method  7 7020.303   87.5922 0.0000 1.0000 -3503.152
-# Winds                4 7031.255   98.5440 0.0000 1.0000 -3511.628
-# StartTime            4 7032.536   99.8243 0.0000 1.0000 -3512.268
-# Null                 3 7033.571  100.8601 0.0000 1.0000 -3513.786
-# SweepVac             4 7035.564  102.8522 0.0000 1.0000 -3513.782
-
-Aran_Nuisance_mod_Gr = glmmTMB(Aran_NO_Gr~OrdinalSamplingDate+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
+Aran_Nuisance_mod_Gr = glmmTMB(Weight_mg~OrdinalSamplingDate+SweepVac+(1|Pasture),REML="FALSE", family=gaussian, data=Indiv_Aran_Gr)
 confint(Aran_Nuisance_mod_Gr,level=0.85)
 summary(Aran_Nuisance_mod_Gr)
 
-#>>Stage 2: null -->could check HerbYesNo----
 
+#>>Stage 2: Aran, HerbYesNo----
 Aran_Graze_mods=function(y,df) { 
-  Null                       = glmmTMB(y~Year+OrdinalSamplingDate+                                   (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo                  = glmmTMB(y~Year+OrdinalSamplingDate+HerbYesNo_alltime+                 (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_v_GrazingTreat   = glmmTMB(y~Year+OrdinalSamplingDate+HerbYesNo_alltime*GrazingTreat+    (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_GrazingTreat     = glmmTMB(y~Year+OrdinalSamplingDate+HerbYesNo_alltime+GrazingTreat+    (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  GrazingTreat               = glmmTMB(y~Year+OrdinalSamplingDate+GrazingTreat+                      (1|Pasture),REML="FALSE", family=nbinom1, data=df)
+  Null                       = glmmTMB(y~Year+OrdinalSamplingDate+SweepVac+                                   (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo                  = glmmTMB(y~Year+OrdinalSamplingDate+SweepVac+HerbYesNo_alltime+                 (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_v_GrazingTreat   = glmmTMB(y~Year+OrdinalSamplingDate+SweepVac+HerbYesNo_alltime*GrazingTreat+    (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_GrazingTreat     = glmmTMB(y~Year+OrdinalSamplingDate+SweepVac+HerbYesNo_alltime+GrazingTreat+    (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  GrazingTreat               = glmmTMB(y~Year+OrdinalSamplingDate+SweepVac+GrazingTreat+                      (1|Pasture),REML="FALSE", family=gaussian, data=df)
   
   mods=list(Null,  HerbYesNo,  HerbYesNo_v_GrazingTreat,  HerbYesNo_GrazingTreat,  GrazingTreat)
   names=c( "Null","HerbYesNo","HerbYesNo*Grazing",  "HerbYesNo+GrazingTreat","GrazingTreat")
   print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
 } 
 
-Aran_Graze_mods(ArthPatch_Graze$Aran_NO_Gr,ArthPatch_Graze) 
-#                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# Null                    6 6864.991    0.0000 0.4595 0.4595 -3426.495
-# HerbYesNo               7 6866.077    1.0866 0.2669 0.7265 -3426.039
-# GrazingTreat            8 6867.332    2.3408 0.1426 0.8690 -3425.666
-# HerbYesNo+GrazingTreat  9 6868.409    3.4184 0.0832 0.9522 -3425.205
-# HerbYesNo*Grazing      11 6869.518    4.5270 0.0478 1.0000 -3423.759
+Aran_Graze_mods(Indiv_Aran_Gr$Weight_mg,Indiv_Aran_Gr) 
+        #                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
+        #HerbYesNo               8 28734.02    0.0000 0.5967 0.5967 -14359.01
+        #HerbYesNo+GrazingTreat 10 28735.30    1.2757 0.3153 0.9120 -14357.65
+        #HerbYesNo*Grazing      12 28737.98    3.9562 0.0825 0.9945 -14356.99
+        #Null                    7 28744.23   10.2069 0.0036 0.9981 -14365.11
+        #GrazingTreat            9 28745.55   11.5239 0.0019 1.0000 -14363.77
 
+
+#Top Model & Predicted Values----
+
+####Should graph this out####
 #....................................................................................#####
-#6. Coleopteran Abundance ----
+#5. Coleopteran Biomass ----
 #....................................................................................#
 
-#>>Stage 1: Cole, StartTime+OrdinalSamplingDate+Winds+Temp+SweepVac----
+#>>Stage 1: Cole, Winds+Method+(StartTime)+(Temp)----
+AICregress_Nuisance_mods(Indiv_Cole_Gr$Weight_mg,Indiv_Cole_Gr,gaussian)
+        #                     K      AIC Delta_AIC  AICWt Cum.Wt        LL
+        #SamplingCond_Method  7 22416.41    0.0000 0.4222 0.4222 -11201.21
+        #Global               8 22416.84    0.4307 0.3404 0.7626 -11200.42
+        #OrdDate_Method       5 22418.71    2.3017 0.1336 0.8962 -11204.36
+        #SweepVac             4 22419.22    2.8053 0.1038 1.0000 -11205.61
+        #Winds                4 22532.98  116.5737 0.0000 1.0000 -11262.49
+        #SamplingCond         6 22536.65  120.2402 0.0000 1.0000 -11262.33
+        #SamplingCond_OrdDate 7 22537.48  121.0681 0.0000 1.0000 -11261.74
+        #OrdDate              4 22540.26  123.8454 0.0000 1.0000 -11266.13
+        #Null                 3 22540.79  124.3765 0.0000 1.0000 -11267.39
+        #StartTime            4 22542.76  126.3470 0.0000 1.0000 -11267.38
+        #Temp                 4 22542.76  126.3529 0.0000 1.0000 -11267.38
 
-AICregress_Nuisance_mods(ArthPatch_Graze$Cole_NO_Gr,ArthPatch_Graze,nbinom1)
-#                      K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# Global               8 6704.772    0.0000 0.9952 0.9952 -3344.386
-# OrdDate_Method       5 6715.450   10.6781 0.0048 1.0000 -3352.725
-# SamplingCond_Method  7 6773.465   68.6933 0.0000 1.0000 -3379.733
-# SweepVac             4 6796.535   91.7637 0.0000 1.0000 -3394.268
-# SamplingCond_OrdDate 7 6846.434  141.6621 0.0000 1.0000 -3416.217
-# OrdDate              4 6849.265  144.4928 0.0000 1.0000 -3420.632
-# Temp                 4 6893.280  188.5080 0.0000 1.0000 -3442.640
-# SamplingCond         6 6894.815  190.0433 0.0000 1.0000 -3441.407
-# Null                 3 6908.642  203.8704 0.0000 1.0000 -3451.321
-# Winds                4 6908.819  204.0470 0.0000 1.0000 -3450.409
-# StartTime            4 6909.714  204.9427 0.0000 1.0000 -3450.857
-Cole_Nuisance_mod_Gr = glmmTMB(Cole_NO_Gr~OrdinalSamplingDate+StartTime+Winds+Temp+SweepVac+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
+Cole_Nuisance_mod_Gr = glmmTMB(Weight_mg~ StartTime+Winds+Temperature+SweepVac+(1|Pasture),REML="FALSE", family=gaussian, data=Indiv_Cole_Gr)
 confint(Cole_Nuisance_mod_Gr,level=0.85)
-summary(Cole_Nuisance_mod_Gr)
+summary(Cole_Nuisance_mod_Gr) 
 
-#>>Stage 2: Cole, HerbYesNo*Grazing----
-
+#>>Stage 2: Cole, HerbYesNo, null competitive-----
 Cole_Graze_mods=function(y,df) { 
-  Null                       = glmmTMB(y~Year+StartTime+OrdinalSamplingDate+SweepVac+Winds+Temp+                                 (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo                  = glmmTMB(y~Year+StartTime+OrdinalSamplingDate+SweepVac+Winds+Temp+HerbYesNo_alltime+               (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_v_GrazingTreat   = glmmTMB(y~Year+StartTime+OrdinalSamplingDate+SweepVac+Winds+Temp+HerbYesNo_alltime*GrazingTreat+               (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_GrazingTreat     = glmmTMB(y~Year+StartTime+OrdinalSamplingDate+SweepVac+Winds+Temp+HerbYesNo_alltime+GrazingTreat+  (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  GrazingTreat               = glmmTMB(y~Year+StartTime+OrdinalSamplingDate+SweepVac+Winds+Temp+GrazingTreat+                    (1|Pasture),REML="FALSE", family=nbinom1, data=df)
+  Null                       = glmmTMB(y~Year+SweepVac+Winds+                                 (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo                  = glmmTMB(y~Year+SweepVac+Winds+HerbYesNo_alltime+               (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_v_GrazingTreat   = glmmTMB(y~Year+SweepVac+Winds+HerbYesNo_alltime*GrazingTreat+  (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_GrazingTreat     = glmmTMB(y~Year+SweepVac+Winds+HerbYesNo_alltime+GrazingTreat+  (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  GrazingTreat               = glmmTMB(y~Year+SweepVac+Winds+GrazingTreat+                    (1|Pasture),REML="FALSE", family=gaussian, data=df)
   
   mods=list(Null,  HerbYesNo,  HerbYesNo_v_GrazingTreat,  HerbYesNo_GrazingTreat,  GrazingTreat)
   names=c( "Null","HerbYesNo","HerbYesNo*Grazing", "HerbYesNo+GrazingTreat","GrazingTreat")
   print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
 } 
 
-#>>Cole: Null, HerbYesNo*Grazing----
-Cole_Graze_mods(ArthPatch_Graze$Cole_NO_Gr,ArthPatch_Graze) 
-#                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# HerbYesNo*Grazing      15 6655.510    0.0000 0.6323 0.6323 -3312.755
-# GrazingTreat           12 6657.544    2.0338 0.2287 0.8610 -3316.772
-# HerbYesNo+GrazingTreat 13 6658.920    3.4101 0.1149 0.9759 -3316.460
-# Null                   10 6662.903    7.3933 0.0157 0.9916 -3321.452
-# HerbYesNo              11 6664.143    8.6331 0.0084 1.0000 -3321.072
-
-#>>Top Model & Predicted Values: something to see here!----
-Cole_Top_Gr = glmmTMB(Cole_NO_Gr~Year+StartTime+OrdinalSamplingDate+Temp+Winds+SweepVac+HerbYesNo_alltime*GrazingTreat+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
-#ggpredict(Cole_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","Year","SweepVac"),ci.lvl=0.85, back.transform=TRUE, append=TRUE)
-Cole_Pred_Gr = as.data.frame(ggpredict(Cole_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","Year","SweepVac"),ci.lvl=0.85, back.transform=TRUE, append=TRUE))
-colnames(Cole_Pred_Gr)=c("HerbYesNo", "Predicted","SE","Lower","Upper","GrazingTreat","Year","SweepVac") #renames columns
-#View(Cole_Pred_Gr) 
-
-Cole_Pred_Gr_Sum= Cole_Pred_Gr %>% 
-  group_by(HerbYesNo, GrazingTreat) %>% 
-  summarise_at(vars(Predicted, Lower, Upper), mean) #averages out the grazing treatment
-#View(Cole_Pred_Gr_Sum) #optional; viewing it so we can make sure things are working 
-
-#now time to plot Coles!!
-Cole_Pred_Gr_Sum$GrazingTreat=factor(Cole_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Cole_Plot_Gr=ggplot(data=Cole_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
-  geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
-  scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
-  theme()+
-  theme_bar_Graze_leg()+
-  #plot.title=element_text(hjust=0.5)
-  scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
-  scale_y_continuous(breaks=c(0,2,4,6,8,10),limits = c(0,10), expand = c(0, 0)) +
-  geom_errorbar(aes(x = GrazingTreat, ymin = Lower, ymax = Upper,group = HerbYesNo),position = dodge, width = 0.2)+
-  labs(y = "Coleoptera/sample", x="Grazing Treatment", fill = "Herbicide Applied?")
-
-print(Cole_Plot_Gr)
-
-
-library(egg)
+####This changed, check table####
+Cole_Graze_mods(Indiv_Cole_Gr$Weight_mg,Indiv_Cole_Gr) 
+          #                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
+          #Null                    7 22373.64    0.0000 0.5257 0.5257 -11179.82
+          #HerbYesNo               8 22375.46    1.8217 0.2114 0.7371 -11179.73
+          #GrazingTreat            9 22375.84    2.2054 0.1745 0.9116 -11178.92
+          #HerbYesNo+GrazingTreat 10 22377.70    4.0637 0.0689 0.9806 -11178.85
+          #HerbYesNo*Grazing      12 22380.23    6.5952 0.0194 1.0000 -11178.12
 
 #....................................................................................#####
-#7. Lepidopteran (Lepi) Abundance ----
+#6. Lepidopteran (Lepi) Larval Biomass ----
 #....................................................................................#
 
-#>>Stage 1: Lepi, SweepVac+OrdinalSamplingDate----
+#>>Stage 1: Lepi_La, SweepVac----
+AICregress_Nuisance_mods(Indiv_Lepi_La_Gr$Weight_mg,Indiv_Lepi_La_Gr,gaussian)
+            #                     K      AIC Delta_AIC  AICWt Cum.Wt        LL
+            #SweepVac             4 11358.57    0.0000 0.4360 0.4360 -5675.284
+            #OrdDate_Method       5 11358.84    0.2692 0.3811 0.8172 -5674.419
+            #SamplingCond_Method  7 11361.66    3.0908 0.0930 0.9102 -5673.829
+            #Global               8 11361.83    3.2657 0.0852 0.9953 -5672.917
+            #StartTime            4 11370.06   11.4963 0.0014 0.9967 -5681.032
+            #Null                 3 11370.24   11.6726 0.0013 0.9980 -5682.120
+            #OrdDate              4 11371.84   13.2734 0.0006 0.9986 -5681.921
+            #Temp                 4 11372.01   13.4419 0.0005 0.9991 -5682.005
+            #Winds                4 11372.10   13.5354 0.0005 0.9996 -5682.052
+            #SamplingCond         6 11373.35   14.7856 0.0003 0.9999 -5680.677
+            #SamplingCond_OrdDate 7 11374.87   16.3029 0.0001 1.0000 -5680.435
 
-AICregress_Nuisance_mods(ArthPatch_Graze$Lepi_NO_Gr,ArthPatch_Graze,nbinom1)
-#                      K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# OrdDate_Method       5 4655.942    0.0000 0.4014 0.4014 -2322.971
-# SweepVac             4 4656.842    0.9004 0.2559 0.6574 -2324.421
-# Global               8 4657.290    1.3483 0.2046 0.8619 -2320.645
-# SamplingCond_Method  7 4658.076    2.1345 0.1381 1.0000 -2322.038
-# StartTime            4 4684.938   28.9963 0.0000 1.0000 -2338.469
-# OrdDate              4 4685.207   29.2659 0.0000 1.0000 -2338.604
-# Null                 3 4686.307   30.3653 0.0000 1.0000 -2340.153
-# SamplingCond_OrdDate 7 4686.945   31.0038 0.0000 1.0000 -2336.473
-# Temp                 4 4687.331   31.3896 0.0000 1.0000 -2339.666
-# SamplingCond         6 4687.777   31.8354 0.0000 1.0000 -2337.889
-# Winds                4 4688.307   32.3652 0.0000 1.0000 -2340.153
-Lepi_Nuisance_mod_Gr = glmmTMB(Lepi_NO_Gr~SweepVac+OrdinalSamplingDate+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
-confint(Lepi_Nuisance_mod_Gr,level=0.85)
-summary(Lepi_Nuisance_mod_Gr)
+Lepi_La_Nuisance_mod_Gr = glmmTMB(Weight_mg~SweepVac+(1|Pasture),REML="FALSE", family=gaussian, data=Indiv_Lepi_La_Gr)
+confint(Lepi_La_Nuisance_mod_Gr,level=0.85)
+summary(Lepi_La_Nuisance_mod_Gr)
 
-#>>Stage 2: Lepi, HerbYesNo+GrazingTreat----
-
-Lepi_Graze_mods=function(y,df) { 
-  Null                        = glmmTMB(y~Year+SweepVac+OrdinalSamplingDate+                                 (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo                   = glmmTMB(y~Year+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+               (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_v_GrazingTreat    = glmmTMB(y~Year+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime*GrazingTreat+  (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  HerbYesNo_GrazingTreat      = glmmTMB(y~Year+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+GrazingTreat+  (1|Pasture),REML="FALSE", family=nbinom1, data=df)
-  GrazingTreat                = glmmTMB(y~Year+SweepVac+OrdinalSamplingDate+GrazingTreat+                    (1|Pasture),REML="FALSE", family=nbinom1, data=df)
+#>>Stage 2: Lepi_La, ----
+Lepi_La_Graze_mods=function(y,df) { 
+  Null                        = glmmTMB(y~Year+SweepVac+                                 (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo                   = glmmTMB(y~Year+SweepVac+HerbYesNo_alltime+               (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_v_GrazingTreat    = glmmTMB(y~Year+SweepVac+HerbYesNo_alltime*GrazingTreat+  (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_GrazingTreat      = glmmTMB(y~Year+SweepVac+HerbYesNo_alltime+GrazingTreat+  (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  GrazingTreat                = glmmTMB(y~Year+SweepVac+GrazingTreat+                    (1|Pasture),REML="FALSE", family=gaussian, data=df)
   
   mods=list(Null,  HerbYesNo,  HerbYesNo_v_GrazingTreat,  HerbYesNo_GrazingTreat,  GrazingTreat)
   names=c( "Null","HerbYesNo","HerbYesNo*Grazing", "HerbYesNo+GrazingTreat","GrazingTreat")
   print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
 } 
 
-Lepi_Graze_mods(ArthPatch_Graze$Lepi_NO_Gr,ArthPatch_Graze) 
-#                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
-# HerbYesNo+GrazingTreat 10 4642.030    0.0000 0.4776 0.4776 -2311.015
-# HerbYesNo               8 4642.202    0.1726 0.4381 0.9158 -2313.101
-# HerbYesNo*Grazing      12 4645.542    3.5123 0.0825 0.9983 -2310.771
-# Null                    7 4654.587   12.5573 0.0009 0.9992 -2320.294
-# GrazingTreat            9 4654.721   12.6910 0.0008 1.0000 -2318.360
-
-#>>Top Model & Predicted Values----
-
-Lepi_Top_Gr = glmmTMB(Lepi_NO_Gr~Year+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+GrazingTreat+(1|Pasture),REML="FALSE", family=nbinom1, data=ArthPatch_Graze)
-#ggpredict(Lepi_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","SweepVac","Year"),ci.lvl=0.85, back.transform=TRUE, append=TRUE)
-Lepi_Pred_Gr = as.data.frame(ggpredict(Lepi_Top_Gr,c("HerbYesNo_alltime", "GrazingTreat","SweepVac","Year"),ci.lvl=0.85, back.transform=TRUE, append=TRUE))
-colnames(Lepi_Pred_Gr)=c("HerbYesNo", "Predicted","SE","Lower","Upper","GrazingTreat","SweepVac","Year") #renames columns
-#View(Lepi_Pred_Gr) 
-
-Lepi_Pred_Gr_Sum= Lepi_Pred_Gr %>% 
-  group_by(HerbYesNo, GrazingTreat) %>% 
-  summarise_at(vars(Predicted, Lower, Upper), mean) #averages out the grazing treatment
-#View(Lepi_Pred_Gr_Sum) #optional; viewing it so we can make sure things are working 
-
-#now time to plot Lepis!!
-Lepi_Pred_Gr_Sum$GrazingTreat=factor(Lepi_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Lepi_Plot_Gr=ggplot(data=Lepi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
-  geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
-  scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
-  theme( axis.title.x=element_blank())+
-  theme_bar_Graze_leg()+
-  #plot.title=element_text(hjust=0.5)
-  scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
-  scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
-  geom_errorbar(aes(x = GrazingTreat, ymin = Lower, ymax = Upper,group = HerbYesNo),position = dodge, width = 0.2)+
-  labs(y = "Lepidoptera/sample", x="Grazing Treatment", fill = "Herbicide Applied?")
-
-
-print(Lepi_Plot_Gr)
+Lepi_La_Graze_mods(Indiv_Lepi_La_Gr$Weight_mg,Indiv_Lepi_La_Gr) 
+        #                         K      AIC Delta_AIC  AICWt Cum.Wt        LL
+        # HerbYesNo               7 6709.176    0.0000 0.4257 0.4257 -3347.588
+        # HerbYesNo+GrazingTreat  9 6709.754    0.5776 0.3190 0.7447 -3345.877
+        # Null                    6 6711.737    2.5607 0.1183 0.8630 -3349.869
+        # GrazingTreat            8 6712.357    3.1810 0.0868 0.9498 -3348.179
+        # HerbYesNo*Grazing      11 6713.452    4.2754 0.0502 1.0000 -3345.726
 
 #....................................................................................#####
-#8. Creating Multipaneled and Summary Figures ----
+#7. Lepidopteran (Lepi) Adult Biomass ----
 #....................................................................................#
 
-ArthHerbFig2 = (Hemi_Plot + Hemi_Plot_Gr +
-                  Orth_Plot + Orth_Plot_Gr +
-                  Lepi_Plot + Lepi_Plot_Gr +
-                  guide_area()+Cole_Plot_Gr +
-                  plot_layout(guides="collect",ncol=2))&
-  theme(
-    legend.justification = "left",
-    #    legend.spacing.y=unit(-.1,"cm"),
-    legend.box.margin=margin( 34)
-  )
-ArthHerbFig2
+#>>Stage 1: Lepi_Ad, SweepVac+OrdinalSamplingDate+(Winds)+StartTime+(Temp)----
+AICregress_Nuisance_mods(Indiv_Lepi_Ad_Gr$Weight_mg,Indiv_Lepi_Ad_Gr,gaussian)
+          #                       K      AIC Delta_AIC  AICWt Cum.Wt        LL
+          #  Global               8 6489.503    0.0000 0.4646 0.4646 -3236.751
+          #  SamplingCond_OrdDate 7 6491.034    1.5314 0.2160 0.6807 -3238.517
+          #  OrdDate_Method       5 6492.060    2.5566 0.1294 0.8101 -3241.030
+          #  OrdDate              4 6493.387    3.8835 0.0666 0.8767 -3242.693
+          #  StartTime            4 6493.450    3.9469 0.0646 0.9413 -3242.725
+          #  SamplingCond_Method  7 6494.946    5.4431 0.0306 0.9718 -3240.473
+          #  SamplingCond         6 6496.972    7.4688 0.0111 0.9829 -3242.486
+          #  SweepVac             4 6497.223    7.7196 0.0098 0.9927 -3244.611
+          #  Null                 3 6499.050    9.5469 0.0039 0.9967 -3246.525
+          #  Winds                4 6500.518   11.0145 0.0019 0.9986 -3246.259
+          #  Temp                 4 6501.043   11.5397 0.0014 1.0000 -3246.521
 
-ggsave(filename="Arth_Herb_and_Graze_Fig.jpg", plot = ArthHerbFig2,
-       scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="/cloud/project/Figs")
-install.packages('TMB', type = 'source')
+Lepi_Ad_Nuisance_mod_Gr = glmmTMB(Weight_mg~SweepVac+OrdinalSamplingDate+Winds+Temperature+StartTime+(1|Pasture),REML="FALSE", family=gaussian, data=Indiv_Lepi_Ad_Gr)
+confint(Lepi_Ad_Nuisance_mod_Gr,level=0.85)
+summary(Lepi_Ad_Nuisance_mod_Gr) #Temp pretending
 
+#>>Stage 2: Lepi_Ad, GrazingTreat+TSH---- #CHANGED THIS, CHECK TABLE####
 
-#need to make composite figure. 
+Lepi_Ad_Graze_mods=function(y,df) { 
+  Null                        = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+                                 (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo                   = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+               (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_v_GrazingTreat    = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime*GrazingTreat+  (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  HerbYesNo_GrazingTreat      = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+HerbYesNo_alltime+GrazingTreat+  (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  GrazingTreat                = glmmTMB(y~Year+StartTime+SweepVac+OrdinalSamplingDate+GrazingTreat+                    (1|Pasture),REML="FALSE", family=gaussian, data=df)
+  
+  mods=list(Null,  HerbYesNo,  HerbYesNo_v_GrazingTreat,  HerbYesNo_GrazingTreat,  GrazingTreat)
+  names=c( "Null","HerbYesNo","HerbYesNo*Grazing", "HerbYesNo+GrazingTreat","GrazingTreat")
+  print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
+} 
+
+#>>Lepi: HerbYesNo----
+Lepi_Ad_Graze_mods(Indiv_Lepi_Ad_Gr$Weight_mg,Indiv_Lepi_Ad_Gr) 
+          #                        K      AIC Delta_AIC  AICWt Cum.Wt        LL
+          #HerbYesNo               9 6484.392    0.0000 0.5159 0.5159 -3233.196
+          #Null                    8 6485.462    1.0698 0.3022 0.8181 -3234.731
+          #HerbYesNo+GrazingTreat 11 6487.529    3.1362 0.1075 0.9257 -3232.764
+          #GrazingTreat           10 6488.912    4.5191 0.0539 0.9795 -3234.456
+          #HerbYesNo*Grazing      13 6490.846    6.4538 0.0205 1.0000 -3232.423
+
+Lepi_Ad_Top_Gr = glmmTMB(Weight_mg~HerbYesNo_alltime+Year+SweepVac+OrdinalSamplingDate+StartTime+(1|Pasture),REML="FALSE", family=gaussian, data=Indiv_Lepi_Ad_Gr)
+confint(Lepi_Ad_Top_Gr,level=0.85)
+summary(Lepi_Ad_Nuisance_mod_Gr)
