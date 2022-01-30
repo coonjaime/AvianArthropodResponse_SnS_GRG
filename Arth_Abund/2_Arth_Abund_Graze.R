@@ -311,10 +311,11 @@ Orth_Pred_Gr_Sum= Orth_Pred_Gr %>%
 
 #now time to plot orths!!
 Orth_Pred_Gr_Sum$GrazingTreat=factor(Orth_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Orth_Plot_Gr=ggplot(data=Orth_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
+Orth.Plot_Gr=ggplot(data=Orth_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
   geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
   scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
-  theme( axis.title.x=element_blank())+
+  theme( axis.title.x=element_blank(),
+         axis.title.y=element_blank())+
   theme_bar_Graze_leg()+  
   #plot.title=element_text(hjust=0.5)
   scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
@@ -322,7 +323,7 @@ Orth_Plot_Gr=ggplot(data=Orth_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+
   geom_errorbar(aes(x = GrazingTreat, ymin = Lower, ymax = Upper,group = HerbYesNo),position = dodge, width = 0.2)+
   labs(y = "Orthoptera/sample",x="Grazing Treatment",fill="Herbicide Applied?")
 
-print(Orth_Plot_Gr)
+print(Orth.Plot_Gr)
 
 #....................................................................................#####
 #3. Hemipteran (Hemi) Abundance ----
@@ -384,10 +385,11 @@ Hemi_Pred_Gr_Sum= Hemi_Pred_Gr %>%
 
 #now time to plot Hemis!!
 Hemi_Pred_Gr_Sum$GrazingTreat=factor(Hemi_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Hemi_Plot_Gr=ggplot(data=Hemi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
+Hemi.Plot_Gr=ggplot(data=Hemi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
   geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
   scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
-  theme( axis.title.x=element_blank())+
+  theme( axis.title.x=element_blank(),
+         axis.title.y=element_blank())+
   theme_bar_Graze_leg()+
   #plot.title=element_text(hjust=0.5)
   scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
@@ -395,7 +397,7 @@ Hemi_Plot_Gr=ggplot(data=Hemi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+
   geom_errorbar(aes(x = GrazingTreat, ymin = Lower, ymax = Upper,group = HerbYesNo),position = dodge, width = 0.2)+
   labs(y = "Hemiptera/sample",x="Grazing Treatment",fill="Herbicide Applied?")
 
-print(Hemi_Plot_Gr)
+print(Hemi.Plot_Gr)
 
 
 #....................................................................................#####
@@ -504,7 +506,7 @@ Cole_Pred_Gr_Sum= Cole_Pred_Gr %>%
 
 #now time to plot Coles!!
 Cole_Pred_Gr_Sum$GrazingTreat=factor(Cole_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Cole_Plot_Gr=ggplot(data=Cole_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
+Cole.Plot_Gr=ggplot(data=Cole_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
   geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
   scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
   theme()+
@@ -513,9 +515,10 @@ Cole_Plot_Gr=ggplot(data=Cole_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+
   scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
   scale_y_continuous(breaks=c(0,2,4,6,8,10),limits = c(0,10), expand = c(0, 0)) +
   geom_errorbar(aes(x = GrazingTreat, ymin = Lower, ymax = Upper,group = HerbYesNo),position = dodge, width = 0.2)+
-  labs(y = "Coleoptera/sample", x="Grazing Treatment", fill = "Herbicide Applied?")
+  labs(y = "Coleoptera/sample", x="Grazing Treatment", fill = "Herbicide Applied?")+
+  ggtitle("D. Coleoptera")
 
-print(Cole_Plot_Gr)
+print(Cole.Plot_Gr)
 
 
 library(egg)
@@ -580,10 +583,11 @@ Lepi_Pred_Gr_Sum= Lepi_Pred_Gr %>%
 
 #now time to plot Lepis!!
 Lepi_Pred_Gr_Sum$GrazingTreat=factor(Lepi_Pred_Gr_Sum$GrazingTreat,levels=c("IES","SLS","None"))
-Lepi_Plot_Gr=ggplot(data=Lepi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
+Lepi.Plot_Gr=ggplot(data=Lepi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+  
   geom_bar(aes(x=GrazingTreat, y=Predicted,fill=HerbYesNo), position=dodge, stat="identity")+
   scale_fill_manual(values=c("darkseagreen4","goldenrod3"))+
-  theme( axis.title.x=element_blank())+
+  theme( axis.title.x=element_blank(),
+         axis.title.y=element_blank())+
   theme_bar_Graze_leg()+
   #plot.title=element_text(hjust=0.5)
   scale_x_discrete(labels=c("Early-\nIntensive","Season-\nLong","None"))+
@@ -592,27 +596,165 @@ Lepi_Plot_Gr=ggplot(data=Lepi_Pred_Gr_Sum, y=Predicted, x=GrazingTreat)+
   labs(y = "Lepidoptera/sample", x="Grazing Treatment", fill = "Herbicide Applied?")
 
 
-print(Lepi_Plot_Gr)
+print(Lepi.Plot_Gr)
 
 #....................................................................................#####
 #8. Creating Multipaneled and Summary Figures ----
 #....................................................................................#
 
-ArthHerbFig2 = (Hemi_Plot + Hemi_Plot_Gr +
-                  Orth_Plot + Orth_Plot_Gr +
-                  Lepi_Plot + Lepi_Plot_Gr +
-                  guide_area()+Cole_Plot_Gr +
+ArthGrazeHerbFig2 = (  Hemi.Plot + Hemi.Plot_Gr +
+                  Orth.Plot + Orth.Plot_Gr +
+                  Lepi.Plot + Lepi.Plot_Gr +
+                  guide_area()+Cole.Plot_Gr +
                   plot_layout(guides="collect",ncol=2))&
   theme(
     legend.justification = "left",
     #    legend.spacing.y=unit(-.1,"cm"),
         legend.box.margin=margin( 34)
   )
-ArthHerbFig2
+ArthGrazeHerbFig2
 
-ggsave(filename="Arth_Herb_and_Graze_Fig.jpg", plot = ArthHerbFig2,
+ggsave(filename="Arth_Herb_and_Graze_Fig.jpg", plot = ArthGrazeHerbFig2,
        scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="/cloud/project/Figs")
-install.packages('TMB', type = 'source')
 
 
-#need to make composite figure. 
+#__________________________####
+#9. Creating the summary figure----
+
+
+Orth_None= Orth_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="None")
+Orth_SLS= Orth_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="SLS") 
+Orth_IES= Orth_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="IES")
+Orth_comb_IES <- cbind(Species="Orthoptera",Orth_IES[1],Orth_IES[2],round(Orth_IES[,3]/Orth_None[,3],4))
+Orth_comb_SLS <- cbind(Species="Orthoptera",Orth_SLS[1],Orth_SLS[2],round(Orth_SLS[,3]/Orth_None[,3],4))
+
+Hemi_None= Hemi_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="None")
+Hemi_SLS= Hemi_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="SLS") 
+Hemi_IES= Hemi_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="IES")
+Hemi_comb_IES <- cbind(Species="Hemiptera",Hemi_IES[1],Hemi_IES[2],round(Hemi_IES[,3]/Hemi_None[,3],4))
+Hemi_comb_SLS <- cbind(Species="Hemiptera",Hemi_SLS[1],Hemi_SLS[2],round(Hemi_SLS[,3]/Hemi_None[,3],4))
+
+
+Lepi_None= Lepi_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="None")
+Lepi_SLS= Lepi_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="SLS") 
+Lepi_IES= Lepi_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="IES")
+Lepi_comb_IES <- cbind(Species="Lepidoptera",Lepi_IES[1],Lepi_IES[2],round(Lepi_IES[,3]/Lepi_None[,3],4))
+Lepi_comb_SLS <- cbind(Species="Lepidoptera",Lepi_SLS[1],Lepi_SLS[2],round(Lepi_SLS[,3]/Lepi_None[,3],4))
+
+
+Cole_None= Cole_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="None")
+Cole_SLS= Cole_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="SLS") 
+Cole_IES= Cole_Pred_Gr_Sum %>% 
+  group_by(GrazingTreat) %>% 
+  filter(GrazingTreat =="IES")
+Cole_comb_IES <- cbind(Species="Coleoptera",Cole_IES[1],Cole_IES[2],round(Cole_IES[,3]/Cole_None[,3],4))
+Cole_comb_SLS <- cbind(Species="Coleoptera",Cole_SLS[1],Cole_SLS[2],round(Cole_SLS[,3]/Cole_None[,3],4))
+
+HerbYesNo=c("Yes","No")
+
+#Because Aran top model was null, filling in all 1's since Con and Treatment are equal
+Aran_comb_IES <- data.frame(Species="Araneae",GrazingTreat = "IES", 
+                            HerbYesNo = HerbYesNo, 
+                        Predicted = 1, stringsAsFactors = FALSE)
+Aran_comb_SLS <- data.frame(Species="Araneae",GrazingTreat = "SLS", 
+                            HerbYesNo = HerbYesNo, 
+                            Predicted = 1, stringsAsFactors = FALSE)
+
+All_Arths_Gr=rbind(Orth_comb_IES,Orth_comb_SLS,
+                   Hemi_comb_IES,Hemi_comb_SLS,
+                   Lepi_comb_IES,Lepi_comb_SLS,
+                   Cole_comb_IES,Cole_comb_SLS,
+                   Aran_comb_IES,Aran_comb_SLS)
+
+#All_Arths$Arth_Treatment=factor(All_Arths$Arth_Treatment,) #in case ordering needs to be changed
+
+# Making the heatmap 
+ArthSummaryFig_Gr =ggplot(All_Arths_Gr, aes(HerbYesNo, GrazingTreat, fill= Predicted)) + 
+  geom_tile()+
+  scale_fill_gradientn(colours = c("darkorange3","gray95","deepskyblue3"), 
+                       values = rescale(c(0,1,2)),
+                       guide = "colorbar")+
+  facet_wrap(Species~., strip.position="left",ncol=1)+
+  scale_y_discrete(expand=c(0,0),position = "left")+
+  scale_x_discrete(expand=c(0,0))+
+  labs(y= "Grazing", x =  "Herbicide",fill="Grazing Treatment:No Grazing")+
+  theme(text=element_text(size=10),
+        axis.title.x=element_text(face="bold", size=10),
+        axis.title.y=element_blank(),
+        axis.text=element_text(size=10,color="black"),
+        axis.line.x = element_line(color="black",size=0.5),
+        axis.line.y = element_line(color="black",size=0.5,),
+        legend.text=element_text(size=7, color="black"),
+        strip.placement = "outside",
+        legend.position = ("top"),
+        legend.title = element_text(vjust=0.85,size=8,color="black",face="bold"),
+        plot.title = element_text(size=11,color="black",face="bold"))+
+  ggtitle("B. Arthropods")+ 
+  guides(fill = guide_colorbar(title.position = "bottom"))
+
+
+ArthSummaryFig_Gr
+ggsave(filename="ArthSummaryFig_Graze.jpg", plot = ArthSummaryFig_Gr,
+       scale = 1, width = 3, height = 8, units = c("in"),dpi = 300,path="Figs")
+
+
+####Making Giant Composite Figures####
+
+#>>Grazing----
+GrazeCombined = (  BirdSummaryFig_Gr + ArthSummaryFig_Gr)&
+  theme(
+    legend.position = "bottom")
+GrazeCombined
+
+ggsave(filename="GrazeCombined.jpg", plot = GrazeCombined,
+       scale = 1, width = 5, height = 7, units = c("in"),dpi = 300,path="/cloud/project/Figs")
+
+#>>Herbicide----
+HerbCombined = (  BirdSummaryFig + ArthSummaryFig)&
+  theme(
+    legend.position = "bottom")
+HerbCombined
+
+ggsave(filename="HerbCombined.jpg", plot = HerbCombined,
+       scale = 1, width = 5, height = 7, units = c("in"),dpi = 300,path="/cloud/project/Figs")
+
+#>>Birds----
+BirdCombined = (  BirdSummaryFig_Gr + BirdSummaryFig )&
+  theme(
+    legend.position = "bottom")
+BirdCombined
+
+ggsave(filename="BirdCombined.jpg", plot = BirdCombined,
+       scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="/cloud/project/Figs")
+
+#>>Arthropods----
+ArthCombined = (  ArthSummaryFig_Gr + ArthSummaryFig)&
+  theme(
+    legend.position = "bottom")
+HerbCombined
+
+ggsave(filename="ArthCombined.jpg", plot = ArthCombined,
+       scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="/cloud/project/Figs")
+

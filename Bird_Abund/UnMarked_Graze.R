@@ -28,6 +28,19 @@ library(easypackages)
 packages('unmarked','ggplot2','ggthemes','ggppubr','gridExtra','AICcmodavg','tidyverse','cowplot','wesanderson','dplyr') 
 
 #2. Overall functions----
+
+theme_bar_Graze_leg <- function () { 
+  theme(text=element_text(size=10),
+        axis.title=element_text(face="bold", size=10),
+        axis.text=element_text(size=10,color="black"),
+        axis.line=element_line(color="black",size=1),
+        legend.text=element_text(size=8, color="black"),
+        legend.title=element_text(size=8,color="black",face="bold"),
+        panel.grid=element_blank(),
+        plot.title=element_text(size=11, face="bold",hjust=0))
+}
+
+
 Data_Cleaning       = function (df) {
   
   #setting NAs from visits to 0
@@ -343,6 +356,7 @@ unmarked_data_Gr    = function(df) {
 dodge <- position_dodge(width=0.9) #ggplot prep for graphing
 
 
+
 #2. Importing----
 setwd("/cloud/project/Bird_Abund")
 
@@ -540,16 +554,9 @@ DICK.plot_Gr <- ggplot(data = DICK_Predicted_Gr_Sum)+ #set the data source for t
   scale_y_continuous(limits = c(0,6), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"),labels=c("No","Yes"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        legend.title=element_text(size=12,color="black",face="bold"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  theme_bar_Graze_leg()+
+  theme(
+    axis.title.x=element_blank())+
   scale_x_discrete(labels=c("Intensive-Early","Season-Long","None"))+
   geom_errorbar(aes(x = GrazingTreat, 
                     ymin = lower, 
@@ -559,8 +566,8 @@ DICK.plot_Gr <- ggplot(data = DICK_Predicted_Gr_Sum)+ #set the data source for t
                 width = 0.2)+ #this is the width of the error bar ends
   labs(y = "Birds per Ha", 
        x = "Grazing Treatment", 
-       fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Dickcissels")  #can use this to set a main title above the plot
+       fill = "Herbicide?") + #sets label for whatever you used to "fill" the bars
+  ggtitle("A. Dickcissels")  #can use this to set a main title above the plot
 DICK.plot_Gr
 
 
@@ -698,15 +705,9 @@ BOBO.plot_Gr <- ggplot(data = BOBO_Predicted_Gr_Sum)+ #set the data source for t
   scale_y_continuous(limits = c(0,7), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  theme_bar_Graze_leg()+
+  theme(
+    axis.title.x=element_blank())+
   scale_x_discrete(labels=c("Intensive-Early","Season-Long","None"))+
   geom_errorbar(aes(x = GrazingTreat, 
                     ymin = lower, 
@@ -716,8 +717,8 @@ BOBO.plot_Gr <- ggplot(data = BOBO_Predicted_Gr_Sum)+ #set the data source for t
                 width = 0.2)+ #this is the width of the error bar ends
   labs(y = "Birds per Ha", 
        x = "Grazing Treatment", 
-       fill = "Herbicide Treatment") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Bobolinks")  #can use this to set a main title above the plot
+       fill = "Herbicide?") + #sets label for whatever you used to "fill" the bars
+  ggtitle("b. Bobolinks")   #can use this to set a main title above the plot
 BOBO.plot_Gr
 
 
@@ -849,14 +850,9 @@ GRSP.plot_Gr <- ggplot(data = GRSP_Predicted_Gr_Sum)+ #set the data source for t
            stat="identity")+ #identity makes it use value provided, it can do stats here if you want
   scale_y_continuous(breaks=c(0,1,2,3,4),limits = c(0,4), expand = c(0, 0)) +
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
+  theme_bar_Graze_leg()+
+  theme(
+    axis.title.x=element_blank())+
   scale_x_discrete(labels=c("Intensive-Early","Season-Long","None"))+
   geom_errorbar(aes(x = GrazingTreat, 
                     ymin = lower, 
@@ -866,8 +862,8 @@ GRSP.plot_Gr <- ggplot(data = GRSP_Predicted_Gr_Sum)+ #set the data source for t
                 width = 0.2)+ #this is the width of the error bar ends
   labs(y = "Birds per Ha", 
        x = "Grazing Treatment", 
-       fill = "Herbicide") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Grasshopper Sparrows")  #can use this to set a main title above the plot
+       fill = "Herbicide?") + #sets label for whatever you used to "fill" the bars
+  ggtitle("G. Grasshopper Sparrows")   #can use this to set a main title above the plot
 GRSP.plot_Gr
 
 
@@ -1006,14 +1002,10 @@ EAME.plot_Gr <- ggplot(data = EAME_Predicted_Gr_Sum)+ #set the data source for t
   scale_y_continuous(breaks=c(0,2,4,6,8,10),limits = c(0,11), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
+  theme_bar_Graze_leg()+
+  theme(
+    axis.title.x=element_blank(),
+    axis.title.y=element_blank())+
   scale_x_discrete(labels=c("Intensive-Early","Season-Long","None"))+
   geom_errorbar(aes(x = GrazingTreat, 
                     ymin = lower, 
@@ -1023,8 +1015,8 @@ EAME.plot_Gr <- ggplot(data = EAME_Predicted_Gr_Sum)+ #set the data source for t
                 width = 0.2)+ #this is the width of the error bar ends
   labs(y = "Birds per Ha", 
        x = "Grazing Treatment", 
-       fill = "Herbicide") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Meadowlarks")  #can use this to set a main title above the plot
+       fill = "Herbicide?") + #sets label for whatever you used to "fill" the bars
+  ggtitle("B. Meadowlarks")   #can use this to set a main title above the plot
 EAME.plot_Gr
 
 #__________________________####
@@ -1113,7 +1105,7 @@ confint(RWBL_abundance_mod_Gr, type="state", level=0.85) #all good
 #_______________________________________
 
 ##>>Top model, Coefs, CIs----
-RWBL_Top_Gr=pcount(~Obs+StartTime+DOY+Robel  ~Herb_Prop+Tree_Prop+Year+HerbYesNo+GrazingTreat+offset(log(Area_ha)), data=RWBL_PCount_Gr, mixture="ZIP",K=100)
+RWBL_Top_Gr=pcount(~Obs+StartTime+DOY+Robel  ~Herb_Prop+Year+HerbYesNo+GrazingTreat+offset(log(Area_ha)), data=RWBL_PCount_Gr, mixture="ZIP",K=100)
 summary(RWBL_Top_Gr)
 RWBL_Abund_coef_df_Gr=Coefficients(RWBL_Top_Gr) 
 confint(RWBL_Top_Gr,type="state",level=0.85)
@@ -1158,14 +1150,10 @@ RWBL.plot_Gr <- ggplot(data = RWBL_Predicted_Gr_Sum)+ #set the data source for t
   scale_y_continuous(limits = c(0,7), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
+  theme_bar_Graze_leg()+
+  theme(
+    axis.title.x=element_blank(),
+    axis.title.y=element_blank())+
   scale_x_discrete(labels=c("Intensive-Early","Season-Long","None"))+
   geom_errorbar(aes(x = GrazingTreat, 
                     ymin = lower, 
@@ -1175,8 +1163,8 @@ RWBL.plot_Gr <- ggplot(data = RWBL_Predicted_Gr_Sum)+ #set the data source for t
                 width = 0.2)+ #this is the width of the error bar ends
   labs(y = "Birds per Ha", 
        x = "Grazing Treatment", 
-       fill = "Herbicide") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Red-winged Blackbirds")  #can use this to set a main title above the plot
+       fill = "Herbicide?") + #sets label for whatever you used to "fill" the bars
+  ggtitle("D. Red-winged blackbirds")   #can use this to set a main title above the plot
 RWBL.plot_Gr
 
 #__________________________####
@@ -1308,15 +1296,8 @@ HESP.plot_Gr <- ggplot(data = HESP_Predicted_Gr_Sum)+ #set the data source for t
   scale_y_continuous(limits = c(0,3), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  theme_bar_Graze_leg()+
+  theme()+
   scale_x_discrete(labels=c("Intensive-Early","Season-Long","None"))+
   geom_errorbar(aes(x = GrazingTreat, 
                     ymin = lower, 
@@ -1326,8 +1307,8 @@ HESP.plot_Gr <- ggplot(data = HESP_Predicted_Gr_Sum)+ #set the data source for t
                 width = 0.2)+ #this is the width of the error bar ends
   labs(y = "Birds per Ha", 
        x = "Grazing Treatment", 
-       fill = "Herbicide") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Henslow's Sparrows")  #can use this to set a main title above the plot
+       fill = "Herbicide?") + #sets label for whatever you used to "fill" the bars
+  ggtitle("E. Henslow's Sparrows")   #can use this to set a main title above the plot
 HESP.plot_Gr
 
 
@@ -1469,15 +1450,9 @@ SEWR.plot_Gr <- ggplot(data = SEWR_Predicted_Gr_Sum)+ #set the data source for t
   scale_y_continuous(limits = c(0,3.5), expand = c(0, 0)) +
   #scale_fill_manual(values = wes_palette("Zissou1", n = 3))+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"))+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
-        axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=12, color="black"),
-        panel.grid=element_blank(),
-        plot.title=element_text(hjust=0.5)
-  )+
-  
+  theme_bar_Graze_leg()+
+  theme(
+    axis.title.y=element_blank())+
   scale_x_discrete(labels=c("Intensive-Early","Season-Long","None"))+
   geom_errorbar(aes(x = GrazingTreat, 
                     ymin = lower, 
@@ -1487,38 +1462,26 @@ SEWR.plot_Gr <- ggplot(data = SEWR_Predicted_Gr_Sum)+ #set the data source for t
                 width = 0.2)+ #this is the width of the error bar ends
   labs(y = "Birds per Ha", 
        x = "Grazing Treatment", 
-       fill = "Herbicide") + #sets label for whatever you used to "fill" the bars
-  ggtitle("Sedge Wrens")  #can use this to set a main title above the plot
+       fill = "Herbicide?") + #sets label for whatever you used to "fill" the bars
+  ggtitle("F. Sedge Wrens")   #can use this to set a main title above the plot
 SEWR.plot_Gr
 
 #__________________________####
 
 #8. Graphing all####
+library ('patchwork')
 
-legend_b <- get_legend(
-  DICK.plot_Gr + 
-    guides(color = guide_legend(nrow = 1)) +
-    theme(legend.position = "bottom")
-)
+BirdGrazeFig= (DICK.plot_Gr + EAME.plot_Gr +
+                BOBO.plot_Gr + RWBL.plot_Gr +
+                HESP.plot_Gr + SEWR.plot_Gr +
+                plot_layout(guides="collect",ncol=2))& 
+  theme(legend.position = 'bottom')
 
-all.Graze.plot <- plot_grid(
-  DICK.plot_Gr + theme(legend.position="none"),
-  EAME.plot_Gr + theme(legend.position="none"),
-  BOBO.plot_Gr + theme(legend.position="none"),
-  RWBL.plot_Gr + theme(legend.position="none"),
-  HESP.plot_Gr + theme(legend.position="none"),
-  SEWR.plot_Gr + theme(legend.position="none"),
-  align = 'vh',
-  #labels = c("A", "B", "C"),
-  hjust = -1,
-  nrow = 3
-)
-final.Graze.plot<-plot_grid(
-  all.Graze.plot,
-  legend_b, 
-  ncol = 1, 
-  rel_heights = c(1, .1))
-final.Graze.plot
+BirdGrazeFig
+
+ggsave(filename="Avian_Graze_Graphs.jpg", plot = BirdGrazeFig,
+       scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="/cloud/project/Figs")
+
 
 #__________________________####
 #9. Creating the summary figure----
@@ -1532,8 +1495,8 @@ DICK_SLS= DICK_Predicted_Gr_Sum %>%
 DICK_IES= DICK_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
   filter(GrazingTreat =="IES")
-DICK_comb_IES <- cbind(Species="Dickcissel",DICK_IES[1],DICK_IES[2],round(DICK_IES[,3]/DICK_None[,3],4))
-DICK_comb_SLS <- cbind(Species="Dickcissel",DICK_SLS[1],DICK_SLS[2],round(DICK_SLS[,3]/DICK_None[,3],4))
+DICK_comb_IES <- cbind(Species="Dickcissels",DICK_IES[1],DICK_IES[2],round(DICK_IES[,3]/DICK_None[,3],4))
+DICK_comb_SLS <- cbind(Species="Dickcissels",DICK_SLS[1],DICK_SLS[2],round(DICK_SLS[,3]/DICK_None[,3],4))
 
 BOBO_None= BOBO_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
@@ -1544,8 +1507,8 @@ BOBO_SLS= BOBO_Predicted_Gr_Sum %>%
 BOBO_IES= BOBO_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
   filter(GrazingTreat =="IES")
-BOBO_comb_IES <- cbind(Species="Bobolink",BOBO_IES[1],BOBO_IES[2],round(BOBO_IES[,3]/BOBO_None[,3],4))
-BOBO_comb_SLS <- cbind(Species="Bobolink",BOBO_SLS[1],BOBO_SLS[2],round(BOBO_SLS[,3]/BOBO_None[,3],4))
+BOBO_comb_IES <- cbind(Species="Bobolinks",BOBO_IES[1],BOBO_IES[2],round(BOBO_IES[,3]/BOBO_None[,3],4))
+BOBO_comb_SLS <- cbind(Species="Bobolinks",BOBO_SLS[1],BOBO_SLS[2],round(BOBO_SLS[,3]/BOBO_None[,3],4))
 
 GRSP_None= GRSP_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
@@ -1556,8 +1519,8 @@ GRSP_SLS= GRSP_Predicted_Gr_Sum %>%
 GRSP_IES= GRSP_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
   filter(GrazingTreat =="IES")
-GRSP_comb_IES <- cbind(Species="Grasshopper Sparrow",GRSP_IES[1],GRSP_IES[2],round(GRSP_IES[,3]/GRSP_None[,3],4))
-GRSP_comb_SLS <- cbind(Species="Grasshopper Sparrow",GRSP_SLS[1],GRSP_SLS[2],round(GRSP_SLS[,3]/GRSP_None[,3],4))
+GRSP_comb_IES <- cbind(Species="Grasshopper\nSparrows",GRSP_IES[1],GRSP_IES[2],round(GRSP_IES[,3]/GRSP_None[,3],4))
+GRSP_comb_SLS <- cbind(Species="Grasshopper\nSparrows",GRSP_SLS[1],GRSP_SLS[2],round(GRSP_SLS[,3]/GRSP_None[,3],4))
 
 
 EAME_None= EAME_Predicted_Gr_Sum %>% 
@@ -1582,8 +1545,8 @@ RWBL_SLS= RWBL_Predicted_Gr_Sum %>%
 RWBL_IES= RWBL_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
   filter(GrazingTreat =="IES")
-RWBL_comb_IES <- cbind(Species="Red-winged Blackbird",RWBL_IES[1],RWBL_IES[2],round(RWBL_IES[,3]/RWBL_None[,3],4))
-RWBL_comb_SLS <- cbind(Species="Red-winged Blackbird",RWBL_SLS[1],RWBL_SLS[2],round(RWBL_SLS[,3]/RWBL_None[,3],4))
+RWBL_comb_IES <- cbind(Species="Red-winged\nBlackbird",RWBL_IES[1],RWBL_IES[2],round(RWBL_IES[,3]/RWBL_None[,3],4))
+RWBL_comb_SLS <- cbind(Species="Red-winged\nBlackbird",RWBL_SLS[1],RWBL_SLS[2],round(RWBL_SLS[,3]/RWBL_None[,3],4))
 
 HESP_None= HESP_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
@@ -1594,8 +1557,8 @@ HESP_SLS= HESP_Predicted_Gr_Sum %>%
 HESP_IES= HESP_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
   filter(GrazingTreat =="IES")
-HESP_comb_IES <- cbind(Species="Henslow's Sparrow",HESP_IES[1],HESP_IES[2],round(HESP_IES[,3]/HESP_None[,3],4))
-HESP_comb_SLS <- cbind(Species="Henslow's Sparrow",HESP_SLS[1],HESP_SLS[2],round(HESP_SLS[,3]/HESP_None[,3],4))
+HESP_comb_IES <- cbind(Species="Henslow's\nSparrow",HESP_IES[1],HESP_IES[2],round(HESP_IES[,3]/HESP_None[,3],4))
+HESP_comb_SLS <- cbind(Species="Henslow's\nSparrow",HESP_SLS[1],HESP_SLS[2],round(HESP_SLS[,3]/HESP_None[,3],4))
 
 
 SEWR_None= SEWR_Predicted_Gr_Sum %>% 
@@ -1607,8 +1570,8 @@ SEWR_SLS= SEWR_Predicted_Gr_Sum %>%
 SEWR_IES= SEWR_Predicted_Gr_Sum %>% 
   group_by(GrazingTreat) %>% 
   filter(GrazingTreat =="IES")
-SEWR_comb_IES <- cbind(Species="Sedge Wren",SEWR_IES[1],SEWR_IES[2],round(SEWR_IES[,3]/SEWR_None[,3],4))
-SEWR_comb_SLS <- cbind(Species="Sedge Wren",SEWR_SLS[1],SEWR_SLS[2],round(SEWR_SLS[,3]/SEWR_None[,3],4))
+SEWR_comb_IES <- cbind(Species="Sedge\nWren",SEWR_IES[1],SEWR_IES[2],round(SEWR_IES[,3]/SEWR_None[,3],4))
+SEWR_comb_SLS <- cbind(Species="Sedge\nWren",SEWR_SLS[1],SEWR_SLS[2],round(SEWR_SLS[,3]/SEWR_None[,3],4))
 
 
 #TSH=c("a","b","c","d")
@@ -1633,19 +1596,22 @@ BirdSummaryFig_Gr =ggplot(All_Birds_Gr, aes(HerbYesNo, GrazingTreat, fill= Predi
   facet_wrap(Species~., strip.position="left",ncol=1)+
   scale_y_discrete(expand=c(0,0),position = "left")+
   scale_x_discrete(expand=c(0,0))+
-  labs(y= "Grazing", x =  "Herbicide",fill="Grazing Treatment/\nNo Grazing")+
+  labs(y= "Grazing", x =  "Herbicide",fill="Grazing Treatment:No Grazing")+
   theme(text=element_text(size=10),
-        axis.title=element_text(face="bold", size=12),
+        axis.title.x=element_text(face="bold", size=10),
+        axis.title.y=element_blank(),
         axis.text=element_text(size=10,color="black"),
         axis.line.x = element_line(color="black",size=0.5),
         axis.line.y = element_line(color="black",size=0.5,),
-        legend.text=element_text(size=10, color="black"),
+        legend.text=element_text(size=7, color="black"),
         strip.placement = "outside",
         legend.position = ("top"),
-        legend.title = element_text(vjust=0.85,size=12,color="black"))
+        legend.title = element_text(vjust=0.85,size=8,color="black",face="bold"),
+        plot.title = element_text(size=11,color="black",face="bold"))+
+  ggtitle("A. Birds")+ 
+  guides(fill = guide_colorbar(title.position = "bottom"))
 
-setwd("/cloud/project")
-  
+
 BirdSummaryFig_Gr
 ggsave(filename="BirdSummaryFig_Graze.jpg", plot = BirdSummaryFig_Gr,
        scale = 1, width = 3, height = 8, units = c("in"),dpi = 300,path="Figs")

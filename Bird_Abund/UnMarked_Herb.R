@@ -25,7 +25,7 @@
 #**************************************************************************####
 #1. Packages----
 library(easypackages)
-packages('unmarked','ggplot2','ggthemes','ggppubr','gridExtra','AICcmodavg','tidyverse','cowplot','wesanderson','dplyr') 
+packages('unmarked','ggplot2','ggthemes','ggppubr','gridExtra','AICcmodavg','tidyverse','cowplot','wesanderson') 
 
 #2. Overall functions----
 Data_Cleaning        = function (df) {
@@ -368,13 +368,14 @@ theme_bar_SnS_leg <- function () {
         axis.title=element_text(face="bold", size=10),
         axis.text=element_text(size=10,color="black"),
         axis.line=element_line(color="black",size=1),
-        legend.text=element_text(size=10, color="black"),
+        legend.text=element_text(size=8, color="black"),
         legend.title=element_blank(),
         panel.grid=element_blank(),
         plot.title=element_text(size=11, face="bold",hjust=0))
       }
 #2. Importing----
 
+setwd("/cloud/project/Bird_Abund")
 load("DICK_Herb.Rdata") #abundance n=7
 load("BOBO_Herb.Rdata") #abundance n=7
 load("GRSP_Herb.Rdata") #abundance n=7
@@ -1323,6 +1324,7 @@ BirdHerbFig
 
 ggsave(filename="Avian_Herb_Graphs.jpg", plot = BirdHerbFig,
        scale = 1, width = 6.5, height = 9, units = c("in"),dpi = 300,path="/cloud/project/Figs")
+
 #__________________________####
 #9. Creating the summary figure----
 
@@ -1428,16 +1430,20 @@ BirdSummaryFig =ggplot(All_Birds, aes(TSH, Bird_Treatment, fill= Predicted)) +
   scale_x_discrete(expand=c(0,0),breaks=c("a","b","c","d"),labels=c("1","2","3","4"))+
   #coord_cartesian(clip="off") +
   #annotate("segment", x = 0.5, xend=0.5,y = 0.5, yend = 2.5, size=1) +
-  labs(y= "Treatment", x =  "Years-Since-Treatment",fill="Treatment/Control")+
-  theme(text=element_text(size=12),
-        axis.title=element_text(face="bold", size=12),
-        axis.text=element_text(size=12,color="black"),
+  labs(y= "Treatment", x =  "Years-Since-Treatment",fill="Treatment:Control")+
+  theme(text=element_text(size=10),
+        axis.title.x=element_text(face="bold", size=10),
+        axis.title.y=element_blank(),        axis.text=element_text(size=10,color="black"),
         axis.line.x = element_line(color="black",size=0.5),
         axis.line.y = element_line(color="black",size=0.5,),
-        legend.text=element_text(size=12, color="black"),
+        legend.text=element_text(size=7, color="black"),
         strip.placement = "outside",
         legend.position = ("top"),
-        legend.title = element_text(vjust=0.85,size=12,color="black"))
+        legend.title = element_text(vjust=0.85,size=8,color="black",face="bold"),
+        plot.title = element_text(size=11,color="black",face="bold"))+
+  ggtitle("A. Birds")+ 
+  guides(fill = guide_colorbar(title.position = "bottom"))
+
 #panel.grid=element_blank()
 #plot.title=element_text(hjust=0.5)
 BirdSummaryFig

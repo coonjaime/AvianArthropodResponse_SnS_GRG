@@ -293,7 +293,7 @@ confint(Orth_Top, level = 0.85)
 #now time to plot orths!!
 Orth_Pred$HerbTreat=factor(Orth_Pred$HerbTreat,levels=c("Con","Spr","SnS"))
 
-Orth_Plot=ggplot(data=Orth_Pred, y=Predicted, x=TSH)+  
+Orth.Plot=ggplot(data=Orth_Pred, y=Predicted, x=TSH)+  
   geom_bar(aes(x=TSH, y=Predicted,fill=HerbTreat), position=dodge, stat="identity")+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"), labels=c("Control", "Spray", "Spray-and-Seed"))+
   theme_bar_SnS_leg()+
@@ -302,9 +302,10 @@ Orth_Plot=ggplot(data=Orth_Pred, y=Predicted, x=TSH)+
   scale_x_discrete(breaks=c("a","b","c"),labels=c("1","2","3"))+
   scale_y_continuous(limits = c(0,40), expand = c(0, 0)) +
   geom_errorbar(aes(x = TSH, ymin = Lower, ymax = Upper,group = HerbTreat),position = dodge, width = 0.2)+
-  labs(y = "Orthoptera/sample", x="Years Since Herbicide", fill = "Herbicide Treatment")
+  labs(y = "Orthoptera/sample", x="Years Since Herbicide", fill = "Herbicide Treatment")+
+  ggtitle("B. Orthoptera")
 
-print(Orth_Plot)
+print(Orth.Plot)
 
 #....................................................................................#####
 #4. Hemipteran (Hemi) Abundance ----
@@ -374,7 +375,7 @@ Hemi_Pred_Sum= Hemi_Pred %>%
 
 #now time to plot Hemis!!
 Hemi_Pred_Sum$HerbTreat=factor(Hemi_Pred_Sum$HerbTreat,levels=c("Con","Spr","SnS"))
-Hemi_Plot=ggplot(data=Hemi_Pred_Sum, y=Predicted, x=TSH)+  
+Hemi.Plot=ggplot(data=Hemi_Pred_Sum, y=Predicted, x=TSH)+  
   geom_bar(aes(x=TSH, y=Predicted,fill=HerbTreat), position=dodge, stat="identity")+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"), labels=c("Control", "Spray", "Spray-and-Seed"))+
   theme_bar_SnS_leg()+
@@ -383,9 +384,10 @@ Hemi_Plot=ggplot(data=Hemi_Pred_Sum, y=Predicted, x=TSH)+
   scale_x_discrete(breaks=c("a","b","c"),labels=c("1","2","3"))+
   scale_y_continuous(limits = c(0,85), expand = c(0, 0)) +
   geom_errorbar(aes(x = TSH, ymin = Lower, ymax = Upper,group = HerbTreat),position = dodge, width = 0.2)+
-  labs(y = "Hemiptera/sample", x="Years Since Treatment", fill = "Herbicide Treatment")
+  labs(y = "Hemiptera/sample", x="Years Since Treatment", fill = "Herbicide Treatment")+
+  ggtitle("A. Hemiptera")
 
-print(Hemi_Plot)
+print(Hemi.Plot)
 
 #....................................................................................#####
 #5. Araneae (Aran) Abundance ----
@@ -425,7 +427,6 @@ Aran_Herb_mods=function(y,df) {
   print(aictab(cand.set = mods, modnames = names,second.ord = FALSE), digits = 4)
 } 
 
-#>>Aran:TSH----
 Aran_Herb_mods(ArthPatch_Herb$Aran_NO,ArthPatch_Herb) 
           #                             K      AIC Delta_AIC  AICWt Cum.Wt        LL
           # TSH                         7 2608.037    0.0000 0.6586 0.6586 -1297.019
@@ -503,7 +504,7 @@ Cole_Pred_Sum= Cole_Pred %>%
 
 #now time to plot Coles!!
 Cole_Pred_Sum$HerbTreat=factor(Cole_Pred_Sum$HerbTreat,levels=c("Con","Spr","SnS"))
-Cole_Plot=ggplot(data=Cole_Pred_Sum, y=Predicted, x=TSH)+  
+Cole.Plot=ggplot(data=Cole_Pred_Sum, y=Predicted, x=TSH)+  
   geom_bar(aes(x=TSH, y=Predicted,fill=HerbTreat), position=dodge, stat="identity")+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"), labels=c("Control", "Spray", "Spray-and-Seed"))+
   theme()+
@@ -514,7 +515,7 @@ Cole_Plot=ggplot(data=Cole_Pred_Sum, y=Predicted, x=TSH)+
   geom_errorbar(aes(x = TSH, ymin = Lower, ymax = Upper,group = HerbTreat),position = dodge, width = 0.2)+
   labs(y = "Coleoptera/sample",x="Grazing Treatment", fill="Herbicide Treatment")
 
-print(Cole_Plot)
+print(Cole.Plot)
 #....................................................................................#####
 #7. Lepidopteran (Lepi) Abundance ----
 #....................................................................................#
@@ -581,7 +582,7 @@ Lepi_Pred_Sum= Lepi_Pred %>%
 
 #now time to plot Lepis!!
 Lepi_Pred_Sum$HerbTreat=factor(Lepi_Pred_Sum$HerbTreat,levels=c("Con","Spr","SnS"))
-Lepi_Plot=ggplot(data=Lepi_Pred_Sum, y=Predicted, x=TSH)+  
+Lepi.Plot=ggplot(data=Lepi_Pred_Sum, y=Predicted, x=TSH)+  
   geom_bar(aes(x=TSH, y=Predicted,fill=HerbTreat), position=dodge, stat="identity")+
   scale_fill_manual(values=c("goldenrod3","darkseagreen4","darkslategray"), labels=c("Control", "Spray", "Spray-and-Seed"))+
   theme()+
@@ -590,9 +591,115 @@ Lepi_Plot=ggplot(data=Lepi_Pred_Sum, y=Predicted, x=TSH)+
   scale_x_discrete(breaks=c("a","b","c"),labels=c("1","2","3"))+
   scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
   geom_errorbar(aes(x = TSH, ymin = Lower, ymax = Upper,group = HerbTreat),position = dodge, width = 0.2)+
-  labs(y = "Lepidoptera/sample",x="Years Since Treatment", fill = "Herbicide Treatment")
+  labs(y = "Lepidoptera/sample",x="Years Since Treatment", fill = "Herbicide Treatment")+
+  ggtitle("C. Lepidoptera")
 
-print(Lepi_Plot)
+print(Lepi.Plot)
 
-#graphing will be in combination with graze results, see 2_Arth_Abund_Graze
+#bar graphs will be in combination with graze results, see 2_Arth_Abund_Graze
+
+#__________________________####
+#98. Creating the summary figure----
+
+library("scales")
+
+#extracting the data for the heatmap
+Orth_Con= Orth_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Con")
+Orth_SnS= Orth_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="SnS") 
+Orth_Spr= Orth_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Spr")
+Orth_comb <- cbind(Species="Orthoptera",Arth_Treatment="SnS",Orth_SnS[6],round(Orth_SnS[,2]/Orth_Con[,2],4))
+Orth_comb_Spr <- cbind(Species="Orthoptera",Arth_Treatment="Spr",Orth_Spr[6],round(Orth_Spr[,2]/Orth_Con[,2],4))
+
+Hemi_Con= Hemi_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Con")
+Hemi_SnS= Hemi_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="SnS")
+Hemi_Spr= Hemi_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Spr")
+Hemi_comb <- cbind(Species="Hemiptera",Arth_Treatment="SnS",Hemi_SnS[6],round(Hemi_SnS[,2]/Hemi_Con[,2],4))
+Hemi_comb_Spr <- cbind(Species="Hemiptera",Arth_Treatment="Spr",Hemi_Spr[6],round(Hemi_Spr[,2]/Hemi_Con[,2],4))
+
+Lepi_Con= Lepi_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Con")
+Lepi_SnS= Lepi_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="SnS")
+Lepi_Spr= Lepi_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Spr")
+Lepi_comb <- cbind(Species="Lepidoptera",Arth_Treatment="SnS",Lepi_SnS[6],round(Lepi_SnS[,2]/Lepi_Con[,2],4))
+Lepi_comb_Spr <- cbind(Species="Lepidoptera",Arth_Treatment="Spr",Lepi_Spr[6],round(Lepi_Spr[,2]/Lepi_Con[,2],4))
+
+Cole_Con= Cole_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Con")
+Cole_SnS= Cole_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="SnS")
+Cole_Spr= Cole_Pred %>% 
+  group_by(HerbTreat) %>% 
+  filter(HerbTreat =="Spr")
+Cole_comb <- cbind(Species="Coleoptera",Arth_Treatment="SnS",Cole_SnS[6],round(Cole_SnS[,2]/Cole_Con[,2],4))
+Cole_comb_Spr <- cbind(Species="Coleoptera",Arth_Treatment="Spr",Cole_Spr[6],round(Cole_Spr[,2]/Cole_Con[,2],4))
+
+
+TSH=c("a","b","c")
+
+#Because Aran top model was null, filling in all 1's since Con and Treatment are equal
+Aran_comb <- data.frame(Species="Araneae",Arth_Treatment = "SnS", 
+                        TSH = TSH, 
+                        Predicted = 1, stringsAsFactors = FALSE)
+Aran_comb_Spr <- data.frame(Species="Araneae",Arth_Treatment = "Spr", 
+                            TSH = TSH, 
+                            Predicted = 1, stringsAsFactors = FALSE)
+
+All_Arths=rbind(Orth_comb,Orth_comb_Spr,
+                Hemi_comb,Hemi_comb_Spr,
+                Lepi_comb,Lepi_comb_Spr,
+                Cole_comb,Cole_comb_Spr,
+                Aran_comb,Aran_comb_Spr)
+
+#All_Arths$Arth_Treatment=factor(All_Arths$Arth_Treatment,) #in case ordering needs to be changed
+
+# Making the heatmap 
+ArthSummaryFig =ggplot(All_Arths, aes(TSH, Arth_Treatment, fill= Predicted)) + 
+  geom_tile()+
+  scale_fill_gradientn(colours = c("darkorange3","gray95","deepskyblue3"), 
+                       values = rescale(c(0,.5,2)),
+                       guide = "colorbar")+
+  facet_grid(Species~., space="free_x", scales="free_y", switch="y")+
+  scale_y_discrete(expand=c(0,0),position = "left")+
+  scale_x_discrete(expand=c(0,0),breaks=c("a","b","c"),labels=c("1","2","3"))+
+  #coord_cartesian(clip="off") +
+  #annotate("segment", x = 0.5, xend=0.5,y = 0.5, yend = 2.5, size=1) +
+  labs(y= "", x =  "Years-Since-Treatment",fill="Treatment:Control")+
+  theme(text=element_text(size=10),
+        axis.title.x=element_text(face="bold", size=10),
+        axis.title.y=element_blank(),
+        axis.text=element_text(size=10,color="black"),
+        axis.line.x = element_line(color="black",size=0.5),
+        axis.line.y = element_line(color="black",size=0.5,),
+        legend.text=element_text(size=7, color="black"),
+        strip.placement = "outside",
+        legend.position = ("top"),
+        legend.title = element_text(vjust=0.85,size=8,color="black",face="bold"),
+        plot.title = element_text(size=11,color="black",face="bold"))+
+  ggtitle("B. Arthropods")+ 
+  guides(fill = guide_colorbar(title.position = "bottom"))
+
+#panel.grid=element_blank()
+#plot.title=element_text(hjust=0.5)
+ArthSummaryFig
+ggsave(filename="ArthSummaryFig.jpg", plot = ArthSummaryFig,
+       scale = 1, width = 6, height = 8, units = c("in"),dpi = 300,path="/cloud/project/Figs")
 
